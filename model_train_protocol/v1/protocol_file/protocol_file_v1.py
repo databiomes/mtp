@@ -9,6 +9,7 @@ from model_train_protocol_schemas.structures.protocol import Instruction, TokenI
     InstructionSet, Guardrail
 from model_train_protocol_schemas.structures.protocol import Protocol
 from model_train_protocol_schemas.utils import get_bloom_schema_url
+from model_train_protocol.common.constants import ModelType
 from model_train_protocol.common.tokens import SpecialToken
 from model_train_protocol.errors import ProtocolFileLayerDepthError
 
@@ -42,7 +43,8 @@ class ProtocolFileV1:
         judge: List = field(default_factory=list)
         ppo: List = field(default_factory=list)
 
-    def __init__(self, name: str, context: List[str], inputs: int, encrypted: bool, valid: bool, state_machine: bool,
+    def __init__(self, name: str, context: List[str], inputs: int, encrypted: bool, valid: bool,
+                 model_type: ModelType,
                  tokens: Collection[Token], special_tokens: Collection[Token],
                  instructions: Collection[BaseInstruction], bloom_version: Version):
         """Initializes the Template with a name and context."""
@@ -52,7 +54,7 @@ class ProtocolFileV1:
         self.context: List[str] = context
         self.encrypted: bool = encrypted
         self.valid: bool = valid
-        self.state_machine: bool = state_machine
+        self.model_type: ModelType = model_type
         self.tokens: Dict[str, dict] = {}
         self.special_token_keys: Set[str] = set()
         self.instruction_token_keys: Set[str] = set()
@@ -232,7 +234,7 @@ class ProtocolFileV1:
         protocol = Protocol(
             name=self.name,
             context=self.context,
-            state_machine=self.state_machine,
+            model_type=self.model_type.value,
             inputs=self.inputs,
             encrypted=self.encrypted,
             valid=self.valid,

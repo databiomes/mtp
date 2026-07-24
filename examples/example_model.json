@@ -1,8 +1,8 @@
 {
-    "$schema": "https://mtp.schemas.databiomes.com/v1/bloom_1_2_0.json",
+    "$schema": "https://mtp.schemas.databiomes.com/v2/bloom_2_0_0.json",
     "name": "example",
     "inputs": 2,
-    "state_machine": false,
+    "model_type": "generative",
     "encrypted": false,
     "valid": true,
     "context": [
@@ -257,7 +257,7 @@
                         "index": 1
                     }
                 ],
-                "name": null,
+                "name": "alice_cat_alice_continue",
                 "ppo": [],
                 "samples": [
                     {
@@ -348,7 +348,7 @@
                     "The Cheshire Cat had been appearing and disappearing at will, leaving Alice unsure of its presence."
                 ],
                 "guardrails": [],
-                "name": null,
+                "name": "alice_cat_alice_appear_disappear",
                 "ppo": [],
                 "samples": [
                     {
@@ -500,7 +500,7 @@
                     "The Cat's ability to appear and disappear at will added to the surreal nature of their interaction."
                 ],
                 "guardrails": [],
-                "name": null,
+                "name": "alice_cat_alice_instruction_numeric",
                 "ppo": [],
                 "samples": [
                     {

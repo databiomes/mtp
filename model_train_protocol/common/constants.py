@@ -1,3 +1,5 @@
+from enum import Enum
+
 from model_train_protocol.common.tokens import SpecialToken, Token, NumToken, FinalToken, FinalNumToken, NumListToken
 from model_train_protocol.common.tokens.SpecialFinalToken import SpecialFinalToken
 
@@ -31,3 +33,10 @@ TokenTypeEnum: dict = {
     "FinalNumToken": FinalNumToken,
     "NumListToken": NumListToken
 }
+
+
+class ModelType(str, Enum):
+    """Enumeration for model types."""
+    GENERATIVE = "generative"
+    STATE_MACHINE = "state_machine"
+    MULTI_CLASSIFICATION = "multi_classifier"

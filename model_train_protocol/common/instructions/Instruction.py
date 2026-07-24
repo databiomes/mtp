@@ -49,32 +49,10 @@ class Instruction(BaseInstruction):
         # Validate output snippet set matches output token set
         self._validate_snippet_matches_set(snippet=response_snippet, expected_token_set=self.output.tokenset)
 
-    def get_token_sets(self) -> List[TokenSet]:
-        """Returns all tokens in the instruction as a list of tuples."""
-        all_tokens_sets: List = []
-        for token_set in self.input.tokensets:
-            all_tokens_sets.append(token_set)
-        all_tokens_sets.append(self.output.tokenset)
-        return all_tokens_sets
-
-    @property
-    def last_tokenset(self) -> TokenSet:
-        """Returns the last TokenSet in the Instruction, which is the response TokenSet."""
-        return self.output.tokenset
-
-    @property
-    def has_guardrails(self) -> bool:
-        """Indicates whether the Instruction has any guardrails defined."""
-        return len(self.input.guardrails) > 0
-
-    def get_guardrails(self) -> list[Guardrail]:
-        """Gets the guardrails attached to the instruction"""
-        return list(self.input.guardrails.values())
-
     # noinspection PyMethodOverriding
     def add_sample(self, input_snippets: List[Union[str | Snippet]], output_snippet: Snippet | str,
                    output_value: Union[int, float, List[Union[int, float]], None] = None, final: FinalToken | None = None):
-        f"""
+        """
         Add a sample to the Instruction.
 
         :param input_snippets: List of context snippets or strings that will be added to the Instruction.

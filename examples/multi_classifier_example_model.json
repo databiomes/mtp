@@ -1,0 +1,253 @@
+{
+    "$schema": "https://mtp.schemas.databiomes.com/v2/bloom_2_0_0.json",
+    "name": "multi_classifier_example",
+    "inputs": 1,
+    "model_type": "multi_classifier",
+    "encrypted": false,
+    "valid": true,
+    "context": [
+        "Alice was tired of sitting by her sister with nothing to do, and she began to wonder what she could do to pass the time.",
+        "The hot day made her sleepy, when suddenly a white rabbit with pink eyes ran past her, muttering about being late.",
+        "Burning with curiosity, Alice chased the rabbit down a rabbit-hole and fell for a very long time before landing softly.",
+        "She found herself in a long, low hall, wandering through a strange world where nothing behaved quite as it should.",
+        "In a tree, surrounded by a dense fog, the Cheshire Cat watches Alice and listens closely to everything she says.",
+        "The Cat does not reply with words. Instead, it silently reads each thing Alice says and judges her mood and purpose.",
+        "Alice's lines swing between wonder, fear, and confusion as she tries to make sense of Wonderland.",
+        "Sometimes she asks a question, sometimes she simply states what she sees, and sometimes she cries out in surprise.",
+        "The Cat's task is to label each line Alice speaks by the emotion behind it and the intent it carries.",
+        "Every judgement is recorded as a small JSON note containing exactly one emotion and one intent."
+    ],
+    "tokens": {
+        "<BOS>": {
+            "desc": null,
+            "key": "<BOS>",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": "start",
+            "type": "SpecialToken"
+        },
+        "<EOS>": {
+            "desc": null,
+            "key": "<EOS>",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": "end",
+            "type": "SpecialFinalToken"
+        },
+        "<NON>": {
+            "desc": null,
+            "key": "<NON>",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": "none",
+            "type": "SpecialFinalToken"
+        },
+        "<PAD>": {
+            "desc": null,
+            "key": "<PAD>",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": "pad",
+            "type": "SpecialToken"
+        },
+        "<RUN>": {
+            "desc": null,
+            "key": "<RUN>",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": "infer",
+            "type": "SpecialToken"
+        },
+        "Alice_": {
+            "desc": null,
+            "key": "Alice_",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": null,
+            "type": "Token"
+        },
+        "English_": {
+            "desc": null,
+            "key": "English_",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": null,
+            "type": "Token"
+        },
+        "States_": {
+            "desc": "Acceptable responses must contain exactly 1 key and 1 value for every key in this map, in any combination: {'emotion': ['curious', 'afraid', 'confused', 'amused'], 'intent': ['question', 'statement', 'exclamation']}.",
+            "key": "States_",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": null,
+            "type": "Token"
+        },
+        "Talk_": {
+            "desc": null,
+            "key": "Talk_",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": null,
+            "type": "Token"
+        },
+        "Tree_": {
+            "desc": "Perched in a tree, surrounded by a dense fog where nothing can be seen past a few feet, the Cheshire Cat sits smiling on a branch.",
+            "key": "Tree_",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": null,
+            "type": "Token"
+        }
+    },
+    "special_tokens": [
+        "<BOS>",
+        "<EOS>",
+        "<NON>",
+        "<PAD>",
+        "<RUN>",
+        "States_",
+        "Tree_English_Alice_Talk_"
+    ],
+    "instruction": {
+        "memory": 2,
+        "sets": [
+            {
+                "context": [
+                    "The Cheshire Cat classifies each line Alice speaks by the emotion she expresses and the intent of the line.",
+                    "Each response is a JSON object with exactly the keys 'emotion' and 'intent'."
+                ],
+                "guardrails": [],
+                "name": "MultiClassifierInstruction",
+                "ppo": [],
+                "samples": [
+                    {
+                        "number_lists": [
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "<NON>",
+                        "strings": [
+                            "What a curious feeling, I must be shutting up like a telescope!",
+                            "{\"emotion\": \"curious\", \"intent\": \"exclamation\"}"
+                        ],
+                        "value": null
+                    },
+                    {
+                        "number_lists": [
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "<NON>",
+                        "strings": [
+                            "Which way ought I to go from here?",
+                            "{\"emotion\": \"confused\", \"intent\": \"question\"}"
+                        ],
+                        "value": null
+                    },
+                    {
+                        "number_lists": [
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "<NON>",
+                        "strings": [
+                            "Oh dear, I do hope this fall will ever come to an end.",
+                            "{\"emotion\": \"afraid\", \"intent\": \"statement\"}"
+                        ],
+                        "value": null
+                    },
+                    {
+                        "number_lists": [
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "<NON>",
+                        "strings": [
+                            "How funny it seems to talk to a cat that keeps vanishing!",
+                            "{\"emotion\": \"amused\", \"intent\": \"exclamation\"}"
+                        ],
+                        "value": null
+                    },
+                    {
+                        "number_lists": [
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "<NON>",
+                        "strings": [
+                            "Are you quite certain that everyone here is mad?",
+                            "{\"emotion\": \"curious\", \"intent\": \"question\"}"
+                        ],
+                        "value": null
+                    }
+                ],
+                "set": [
+                    [
+                        "Tree_",
+                        "English_",
+                        "Alice_",
+                        "Talk_"
+                    ],
+                    [
+                        "States_"
+                    ]
+                ]
+            }
+        ]
+    }
+}

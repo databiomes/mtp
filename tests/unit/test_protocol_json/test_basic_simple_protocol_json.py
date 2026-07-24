@@ -17,7 +17,7 @@ class TestBasicSimpleProtocolJSON:
             inputs=protocol.input_count,
             encrypted=protocol.encrypt,
             valid=True,
-            state_machine=protocol.state_machine,
+            model_type=protocol.get_model_type(),
             tokens=protocol.tokens,
             special_tokens=protocol.special_tokens,
             instructions=protocol.instructions,
@@ -39,11 +39,11 @@ class TestBasicSimpleProtocolJSON:
 
         # Test that no unexpected keys are present
         expected_keys = {"$schema", "name", "context", "tokens", "special_tokens", "instruction",
-                         "encrypted", "valid", "inputs", "state_machine"}
+                         "encrypted", "valid", "inputs", "model_type"}
         actual_keys = set(json_output.keys())
         assert actual_keys == expected_keys
 
-        assert json_output["state_machine"] == basic_simple_protocol.state_machine
+        assert json_output["model_type"] == basic_simple_protocol.get_model_type().value
 
     def test_basic_simple_protocol_name(self, basic_simple_protocol):
         """Test that the protocol name is correct."""

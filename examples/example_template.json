@@ -1,7 +1,7 @@
 {
-    "$schema": "https://mtp.schemas.databiomes.com/v1/template_1_2_0.json",
+    "$schema": "https://mtp.schemas.databiomes.com/v2/template_2_0_0.json",
     "encrypt": false,
-    "state_machine": false,
+    "model_type": "generative",
     "inputs": 2,
     "tokens": {
         "input": {
@@ -64,7 +64,7 @@
     },
     "states": [],
     "example_usage": {
-        "instruction_input": "<BOS>\nTree_English_Cat_Talk_Coordinates_[-336, -675, -375]\nThen it doesnt matter which way you go.\nTree_English_Alice_Talk_Emotion_1\nCan you tell me a way?\nTree_English_Cat_Talk_\n<RUN>\n",
+        "instruction_input": "<BOS>\nTree_English_Cat_Talk_Coordinates_[-510, -361, 341]\nThen it doesnt matter which way you go.\nTree_English_Alice_Talk_Emotion_5\nCan you tell me a way?\nTree_English_Cat_Talk_\n<RUN>\n",
         "valid_model_output": "Then it doesnt matter which way you go.\nMadness_\n<EOS>",
         "guardrail_model_output": "Are you as mad as me?\nContinue_<UNK>_\n<EOS>"
     }
