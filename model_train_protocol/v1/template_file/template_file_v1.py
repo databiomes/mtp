@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Union, List
 
-from model_train_protocol import Instruction, ExtendedInstruction, StateMachineInstruction
+from model_train_protocol import Instruction, ExtendedInstruction, StateMachineInstruction, MultiClassifierInstruction
 from model_train_protocol.common.constants import BOS_TOKEN, RUN_TOKEN, EOS_TOKEN, UNK_TOKEN, NON_TOKEN
 from model_train_protocol.common.instructions import BaseInstruction
 from model_train_protocol.common.instructions.BaseInstruction import Sample
@@ -26,6 +26,7 @@ class InstructionTypeEnum(Enum):
     BASIC = "basic"
     EXTENDED = "extended"
     STATE_MACHINE = "state_machine"
+    MULTI_CLASSIFICATION_MACHINE = "multi_classification_machine"
 
     @classmethod
     def get_instruction_type_by_class(cls, instruction: BaseInstruction) -> 'InstructionTypeEnum':
@@ -36,6 +37,8 @@ class InstructionTypeEnum(Enum):
             return cls.EXTENDED
         elif isinstance(instruction, StateMachineInstruction):
             return cls.STATE_MACHINE
+        elif isinstance(instruction, MultiClassifierInstruction):
+            return cls.MULTI_CLASSIFICATION_MACHINE
         else:
             raise TemplateFileError("Unknown instruction type.")
 
