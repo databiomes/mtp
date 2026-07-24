@@ -23,7 +23,7 @@ class StateMachineInstruction(BaseInstruction):
     minimum_samples: int = STATE_MACHINE_MINIMUM_INSTRUCTION_SAMPLES
 
     def __init__(self, input: StateMachineInput, states: List[str]):
-        f"""
+        """
         Initializes an Instruction instance.
 
         :param input: List of tuples containing Token instances that define the input structure. This precedes the model's response.

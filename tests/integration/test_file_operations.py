@@ -82,7 +82,7 @@ class TestFileOperations:
         with open(template_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
-        assert data["state_machine"] is False
+        assert data["model_type"] == "generative"
         assert data["states"] == []
 
         template_file.unlink()
@@ -97,7 +97,7 @@ class TestFileOperations:
         with open(template_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
-        assert data["state_machine"] is True
+        assert data["model_type"] == "state_machine"
         assert data["states"]
         assert "Action 0" in data["states"]
 

@@ -1,12 +1,13 @@
 """
 Unit tests for the Protocol class.
 """
+import json
 from pathlib import Path
 
 import pytest
 
 from model_train_protocol import Token, TokenSet, Instruction, ExtendedInstruction, \
-    Guardrail, FinalToken, ProtocolError
+    Guardrail, FinalToken, ProtocolError, MultiClassifierInstruction
 from model_train_protocol.common.instructions.input.InstructionInput import InstructionInput
 from model_train_protocol.common.instructions.output.InstructionOutput import InstructionOutput
 from model_train_protocol.common.instructions.output.ExtendedResponse import ExtendedResponse
@@ -1227,3 +1228,58 @@ class TestProtocol:
 
         with pytest.raises(ProtocolError, match="Missing required field 'name'"):
             ProtocolV1.from_json(protocol_json)
+
+    def test_protocol_from_json_generative_model_type(self, basic_simple_protocol: ProtocolV1):
+        """Test Protocol.from_json dispatches a generative bloom to the generative loader."""
+        basic_simple_protocol._prep_protocol()
+        protocol_json: dict[str, object] = basic_simple_protocol.get_protocol_file(valid=True).to_json()
+        assert protocol_json["model_type"] == "generative"
+
+        loaded_protocol: ProtocolV1 = ProtocolV1.from_json(protocol_json)
+
+        assert loaded_protocol.get_model_type().value == "generative"
+        assert loaded_protocol.state_machine is False
+
+    def test_protocol_from_json_state_machine_round_trip(self, state_machine_protocol: ProtocolV1):
+        """Test Protocol.from_json dispatches a state machine bloom to the state machine loader."""
+        state_machine_protocol._prep_protocol()
+        protocol_json: dict[str, object] = state_machine_protocol.get_protocol_file(valid=True).to_json()
+        assert protocol_json["model_type"] == "state_machine"
+
+        loaded_protocol: ProtocolV1 = ProtocolV1.from_json(protocol_json)
+
+        assert loaded_protocol.get_model_type().value == "state_machine"
+        assert loaded_protocol.state_machine is True
+        assert loaded_protocol.get_protocol_file(valid=True).to_json() == protocol_json
+
+    def test_protocol_from_json_multi_classifier_round_trip(self):
+        """Test Protocol.from_json rebuilds an equivalent multi classifier protocol."""
+        protocol: ProtocolV1 = ProtocolV1("multi_classifier_round_trip", inputs=1, encrypt=False)
+        for i in range(10):
+            protocol.add_context(f"Multi classifier context line {i + 1}")
+
+        state_map = {
+            "emotion": ["curious", "afraid", "confused"],
+            "intent": ["question", "statement"],
+        }
+        instruction_input = InstructionInput(tokensets=[TokenSet(tokens=[Token("Line")])])
+        instruction = MultiClassifierInstruction(input=instruction_input, state_map=state_map)
+        instruction.add_context("Classify each line by emotion and intent.")
+        for emotion, intent in [("curious", "question"), ("afraid", "statement"), ("confused", "question")]:
+            instruction.add_sample(
+                input_snippets=[f"A {emotion} {intent} line."],
+                output_snippet=json.dumps({"emotion": emotion, "intent": intent}),
+            )
+        protocol.add_instruction(instruction)
+
+        protocol._prep_protocol()
+        protocol_json: dict[str, object] = protocol.get_protocol_file(valid=True).to_json()
+        assert protocol_json["model_type"] == "multi_classifier"
+
+        loaded_protocol: ProtocolV1 = ProtocolV1.from_json(protocol_json)
+
+        assert loaded_protocol.get_model_type().value == "multi_classifier"
+        loaded_instruction = next(iter(loaded_protocol.instructions))
+        assert isinstance(loaded_instruction, MultiClassifierInstruction)
+        assert loaded_instruction.output.required_keys == list(state_map.keys())
+        assert loaded_protocol.get_protocol_file(valid=True).to_json() == protocol_json

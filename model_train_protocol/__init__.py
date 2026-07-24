@@ -11,6 +11,8 @@ from .common.instructions.output import InstructionOutput, ExtendedResponse
 from .common.instructions import Instruction, ExtendedInstruction
 from .common.instructions.StateMachineInstruction import StateMachineInstruction
 from .common.instructions.output.StateMachineOutput import StateMachineOutput
+from .common.instructions.MultiClassifierInstruction import MultiClassifierInstruction
+from .common.instructions.output.MultiClassifierOutput import MultiClassifierOutput
 from .common.guardrails import Guardrail
 from model_train_protocol.v1.protocol.protocol_v1 import ProtocolV1 as Protocol
 from .errors import (
@@ -34,6 +36,7 @@ from .errors import (
     InstructionTypeError,
     OutputError,
     OutputTypeError,
+    MultiClassifierError,
     ProtocolError,
     ProtocolTypeError,
     ProviderError,
@@ -56,6 +59,8 @@ __all__ = [
     "InstructionOutput",
     "StateMachineInstruction",
     "StateMachineOutput",
+    "MultiClassifierInstruction",
+    "MultiClassifierOutput",
     "ExtendedResponse",
     "Guardrail",
     "MTPError",
@@ -78,6 +83,7 @@ __all__ = [
     "InstructionTypeError",
     "OutputError",
     "OutputTypeError",
+    "MultiClassifierError",
     "ProtocolError",
     "ProtocolTypeError",
     "ProviderError",
