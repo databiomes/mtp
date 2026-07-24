@@ -11,6 +11,7 @@ from .guardrails import GuardrailError, GuardrailTypeError
 from .instruction_input import DuplicateGuardrailError, GuardrailIndexError, InstructionInputError
 from .instructions import InstructionError, InstructionTypeError
 from .outputs import OutputError, OutputTypeError
+from .multi_classifier import MultiClassifierError
 from .protocol import ProtocolError, ProtocolTypeError
 from .protocol_file import ProtocolFileError, ProtocolFileLayerDepthError
 from .providers import ProviderError
@@ -40,6 +41,7 @@ __all__ = [
     "InstructionTypeError",
     "OutputError",
     "OutputTypeError",
+    "MultiClassifierError",
     "ProtocolError",
     "ProtocolTypeError",
     "ProviderError",
