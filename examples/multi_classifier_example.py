@@ -117,4 +117,4 @@ protocol.add_instruction(alice_line_classifier)
 
 # Save the protocol. This produces the model.json that can be submitted to Databiomes for training.
 protocol.save()
-# protocol.template() TEMPLATE NOT FUNCTIONAL WITHOUT mtp-schemas v1.3.0
+protocol.template()

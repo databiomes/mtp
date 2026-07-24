@@ -10,8 +10,9 @@ from packaging.version import Version
 from model_train_protocol import Token, FinalToken, Guardrail, Instruction, InstructionInput, InstructionOutput, Snippet
 from model_train_protocol.common.constants import BOS_TOKEN, EOS_TOKEN, RUN_TOKEN, PAD_TOKEN, UNK_TOKEN, NON_TOKEN, \
     MINIMUM_TOTAL_CONTEXT_LINES, PER_FINAL_TOKEN_SAMPLE_MINIMUM, TokenTypeEnum, \
-    MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE
+    MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE, ModelType
 from model_train_protocol.common.instructions.BaseInstruction import BaseInstruction, Sample
+from model_train_protocol.common.instructions.MultiClassifierInstruction import MultiClassifierInstruction
 from model_train_protocol.common.instructions.StateMachineInstruction import StateMachineInstruction
 from model_train_protocol.common.instructions.input.StateMachineInput import StateMachineInput
 from model_train_protocol.common.tokens import TokenSet
@@ -107,7 +108,7 @@ class ProtocolV1(BaseProtocol):
         inputs: int = protocol_file["inputs"]
         encrypt: bool = protocol_file["encrypted"]
 
-        state_machine: bool = protocol_file["state_machine"]
+        state_machine: bool = protocol_file["model_type"] == ModelType.STATE_MACHINE.value
         protocol = ProtocolV1(name=name, inputs=inputs, encrypt=encrypt, state_machine=state_machine)
         protocol.context = protocol_file["context"]
 
@@ -271,6 +272,19 @@ class ProtocolV1(BaseProtocol):
         if instruction.has_guardrails:
             self.has_guardrails = True
 
+    def get_model_type(self) -> ModelType:
+        """
+        Determines the ModelTypeEnum for this protocol based on its configuration and instructions.
+
+        :return: STATE_MACHINE if the protocol is a state machine, MULTI_CLASSIFICATION if it contains a
+            MultiClassifierInstruction, otherwise GENERATIVE.
+        """
+        if self.state_machine:
+            return ModelType.STATE_MACHINE
+        if any(isinstance(instruction, MultiClassifierInstruction) for instruction in self.instructions):
+            return ModelType.MULTI_CLASSIFICATION
+        return ModelType.GENERATIVE
+
     def get_protocol_file(self, valid: bool) -> ProtocolFileV1:
         """
         Prepares and returns the ProtocolFile representation of the protocol.
@@ -281,7 +295,7 @@ class ProtocolV1(BaseProtocol):
 
         return ProtocolFileV1(
             name=self.name, context=self.context, inputs=self.input_count, encrypted=self.encrypt,
-            valid=valid, state_machine=self.state_machine,
+            valid=valid, model_type=self.get_model_type(),
             tokens=self.tokens, special_tokens=self.special_tokens, instructions=self.instructions,
             bloom_version=self.bloom_version
         )
@@ -299,7 +313,7 @@ class ProtocolV1(BaseProtocol):
             inputs=self.input_count,
             encrypt=self.encrypt,
             has_guardrails=self.has_guardrails,
-            state_machine=self.state_machine,
+            model_type=self.get_model_type(),
         )
 
     def save(self, name: Optional[str] = None, path: Optional[str] = None):

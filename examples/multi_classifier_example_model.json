@@ -1,8 +1,8 @@
 {
-    "$schema": "https://mtp.schemas.databiomes.com/v1/bloom_1_2_0.json",
+    "$schema": "https://mtp.schemas.databiomes.com/v2/bloom_2_0_0.json",
     "name": "multi_classifier_example",
     "inputs": 1,
-    "state_machine": false,
+    "model_type": "multi_classifier",
     "encrypted": false,
     "valid": true,
     "context": [

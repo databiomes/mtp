@@ -1,0 +1,35 @@
+{
+    "$schema": "https://mtp.schemas.databiomes.com/v2/template_2_0_0.json",
+    "encrypt": false,
+    "model_type": "multi_classifier",
+    "inputs": 1,
+    "tokens": {
+        "input": {
+            "States_": "States_",
+            "Tree_English_Alice_Talk_": "Tree_English_Alice_Talk_"
+        },
+        "output": {
+            "<NON>": "<NON>"
+        }
+    },
+    "instructions": {
+        "MultiClassifierInstruction": {
+            "type": "multi_classification_machine",
+            "input": [
+                "<BOS>\n",
+                "Tree_English_Alice_Talk_\n<string>\n",
+                "States_\n",
+                "<RUN>"
+            ],
+            "output": [
+                "<string>\n<NON>\n<EOS>"
+            ]
+        }
+    },
+    "states": [],
+    "example_usage": {
+        "instruction_input": "",
+        "valid_model_output": "",
+        "guardrail_model_output": ""
+    }
+}
