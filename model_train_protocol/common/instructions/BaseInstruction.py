@@ -94,15 +94,18 @@ class BaseInstruction(ABC):
             raise InstructionTypeError("All items in context must be instances of TokenSet.")
         self._validate_context()
 
+    def get_token_sets(self) -> List[TokenSet]:
+        """Returns all tokens in the instruction as a list of tuples."""
+        all_tokens_sets: List = []
+        for token_set in self.input.tokensets:
+            all_tokens_sets.append(token_set)
+        all_tokens_sets.append(self.output.tokenset)
+        return all_tokens_sets
+
     @abc.abstractmethod
     def add_sample(self):
         """Add a sample to the Instruction."""
         raise NotImplementedError("Subclasses must implement add_sample method.")
-
-    @abc.abstractmethod
-    def get_token_sets(self) -> List[TokenSet]:
-        """Returns all tokens in the instruction as a list of tuples."""
-        raise NotImplementedError("Subclasses must implement get_token_sets method.")
 
     @property
     def example_final_token(self) -> FinalToken:
@@ -112,21 +115,18 @@ class BaseInstruction(ABC):
         return self.output.default_final
 
     @property
-    @abc.abstractmethod
     def last_tokenset(self) -> TokenSet:
-        """Returns the response TokenSet of the instruction."""
-        raise NotImplementedError("Subclasses must implement last_tokenset method.")
+        """Returns the last TokenSet in the Instruction, which is the response TokenSet."""
+        return self.output.tokenset
 
     @property
-    @abc.abstractmethod
     def has_guardrails(self) -> bool:
-        """Returns True if the Instruction has any guardrails added."""
-        raise NotImplementedError("Subclasses must implement has_guardrails method.")
+        """Indicates whether the Instruction has any guardrails defined."""
+        return len(self.input.guardrails) > 0
 
-    @abc.abstractmethod
     def get_guardrails(self) -> list[Guardrail]:
-        """Returns a list of the guardrails attached to the instruction added."""
-        raise NotImplementedError("Subclasses must implement get_guardrails method.")
+        """Gets the guardrails attached to the instruction"""
+        return list(self.input.guardrails.values())
 
     def validate_instruction(self):
         """Validates the Instruction meets required Protocol standards."""

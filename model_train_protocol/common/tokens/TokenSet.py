@@ -14,7 +14,6 @@ class Snippet:
     numbers: List[Union[int, float]]
     number_lists: List[List[Union[int, float]]]
 
-
 class TokenSet:
     """A set of Tokens representing a combination of input types."""
 
