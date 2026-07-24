@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import ast
+import json
 from typing import TYPE_CHECKING, Dict, List
 
 from model_train_protocol import Token, FinalToken, InstructionInput, Snippet
@@ -14,20 +14,28 @@ if TYPE_CHECKING:
     from model_train_protocol.v1.protocol.protocol_v1 import ProtocolV1
 
 
-def _recover_state_map(state_token: Token) -> Dict[str, List[str]]:
+def _build_state_map(samples: List[Sample]) -> Dict[str, List[str]]:
     """
-    Recovers the classification state map from the description of the classifier's output ('States') token.
+    Builds the classification state map from the union of all sample outputs.
 
-    The state map is embedded in the token description when a MultiClassifierInstruction is created, so it can be
-    parsed back out to rebuild an equivalent instruction.
+    Each sample output is a JSON object mapping classification labels (keys) to a classification value. The state map
+    is the set of values observed across all samples for each key, so it is reconstructed by parsing every sample
+    output and accumulating the values into a set per key.
     """
-    desc: str = state_token.desc or ""
-    start: int = desc.find("{")
-    end: int = desc.rfind("}")
-    if start == -1 or end == -1 or end < start:
-        raise MultiClassifierError(
-            f"Unable to recover the classification state map from token '{state_token.value}'.")
-    return ast.literal_eval(desc[start:end + 1])
+    state_sets: Dict[str, set] = {}
+    key_order: List[str] = []
+    for sample in samples:
+        try:
+            output_dict: Dict[str, str] = json.loads(sample.output)
+        except json.JSONDecodeError:
+            raise MultiClassifierError(
+                f"MultiClassifier sample output must be valid JSON. Got: {sample.output}")
+        for key, value in output_dict.items():
+            if key not in state_sets:
+                state_sets[key] = set()
+                key_order.append(key)
+            state_sets[key].add(value)
+    return {key: sorted(state_sets[key]) for key in key_order}
 
 
 def load_multi_classifier_protocol(protocol_file: dict, protocol: "ProtocolV1",
@@ -51,8 +59,8 @@ def load_multi_classifier_protocol(protocol_file: dict, protocol: "ProtocolV1",
             samples.append(Sample(input=input_lines, output=output_line, prompt=None, numbers=sample["numbers"],
                                   number_lists=sample["number_lists"], result=result_token, value=sample["value"]))
 
-        # The final tokenset holds the classifier's 'States' token, whose description encodes the state map.
-        state_map: Dict[str, List[str]] = _recover_state_map(tokensets[-1].tokens[0])
+        # Build the state map from the union of all sample outputs, collecting the set of values seen per key.
+        state_map: Dict[str, List[str]] = _build_state_map(samples)
 
         instr_input: InstructionInput = InstructionInput(
             tokensets=tokensets[:-1],
@@ -62,6 +70,8 @@ def load_multi_classifier_protocol(protocol_file: dict, protocol: "ProtocolV1",
             input=instr_input,
             state_map=state_map,
         )
+        # Reuse the 'States' token from the bloom file so its token is not re-added as a duplicate.
+        protocol_instruction.output.tokenset = tokensets[-1]
         protocol_instruction.context = context
 
         for sample in samples:
