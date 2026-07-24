@@ -358,7 +358,7 @@ class TemplateFileV1:
 
         template: TemplateModel = TemplateModel(
             encrypt=self.encrypt,
-            model_type=self.model_type.value,
+            model_type=self.model_type,
             states=states,
             inputs=self.inputs,
             tokens=tokens,

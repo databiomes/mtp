@@ -234,7 +234,7 @@ class ProtocolFileV1:
         protocol = Protocol(
             name=self.name,
             context=self.context,
-            model_type=self.model_type.value,
+            model_type=self.model_type,
             inputs=self.inputs,
             encrypted=self.encrypted,
             valid=self.valid,
