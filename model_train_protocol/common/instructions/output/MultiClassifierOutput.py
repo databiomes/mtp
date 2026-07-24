@@ -1,4 +1,4 @@
-from model_train_protocol.errors import OutputTypeError
+from model_train_protocol.errors import MultiClassifierError, OutputTypeError
 from .BaseOutput import BaseOutput
 from ...constants import NON_TOKEN
 from ...tokens.TokenSet import TokenSet, Snippet
@@ -29,20 +29,18 @@ class MultiClassifierOutput(BaseOutput):
         if not isinstance(snippet, Snippet):
             raise OutputTypeError(f"Snippet must be an instance of Snippet. Got: {type(snippet)}")
 
-        # Validate all keys in the snippet are present in the required keys
-        snippet_dict: dict[str, str] = json.loads(snippet.string)
+        # Validate that snippet.string is valid JSON
+        try:
+            snippet_dict: dict[str, str] = json.loads(snippet.string)
+        except json.JSONDecodeError:
+            raise MultiClassifierError(f"MultiClassifier Snippet string must be valid JSON. Got: {snippet.string}")
 
+        # Validate all required keys are present in the snippet
         for key in self.required_keys:
             if key not in snippet_dict:
-                raise OutputTypeError(
+                raise MultiClassifierError(
                     f"MultiClassifier Snippet must contain the key '{key}'. Got: {snippet_dict.keys()}")
 
         if len(snippet_dict) != len(self.required_keys):
-            raise OutputTypeError(
+            raise MultiClassifierError(
                 f"MultiClassifier Snippet must contain exactly {len(self.required_keys)} keys. Got: {len(snippet_dict)} keys.")
-
-        # Validate that snippet.string is valid json
-        try:
-            json.loads(snippet.string)
-        except json.JSONDecodeError:
-            raise OutputTypeError(f"MultiClassifier Snippet string must be valid JSON. Got: {snippet.string}")
