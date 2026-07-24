@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Dict, Union
 
-from model_train_protocol import Token, Guardrail, Instruction
+from model_train_protocol import Token, Guardrail, Instruction, MultiClassifierInstruction
 from model_train_protocol.common.constants import TokenTypeEnum
 from model_train_protocol.common.instructions.StateMachineInstruction import StateMachineInstruction
 
@@ -14,7 +14,8 @@ class BloomUtils:
     """Helper class for converting bloom files into Protocol objects."""
 
     @classmethod
-    def add_guardrails_to_instruction(cls, protocol_instruction: Union[Instruction, StateMachineInstruction],
+    def add_guardrails_to_instruction(cls, protocol_instruction: Union[
+        Instruction, StateMachineInstruction, MultiClassifierInstruction],
                                       instruction: dict):
         """Adds guardrails defined in a bloom instruction set to a protocol instruction."""
         for guardrail_set in instruction["guardrails"]:
