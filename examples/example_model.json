@@ -241,123 +241,6 @@
         "sets": [
             {
                 "context": [
-                    "Alice was feeling a mix of curiosity and apprehension as she conversed with the Cheshire Cat.",
-                    "The Cat's ability to appear and disappear at will added to the surreal nature of their interaction."
-                ],
-                "guardrails": [],
-                "name": "alice_cat_alice_instruction_numeric",
-                "ppo": [],
-                "samples": [
-                    {
-                        "number_lists": [
-                            [
-                                [
-                                    100,
-                                    200,
-                                    -50
-                                ]
-                            ],
-                            [],
-                            []
-                        ],
-                        "numbers": [
-                            [],
-                            [
-                                5
-                            ],
-                            []
-                        ],
-                        "prompt": null,
-                        "result": "Madness_",
-                        "strings": [
-                            "Then it doesnt matter which way you go.",
-                            "Can you tell me a way?",
-                            "Then it doesnt matter which way you go."
-                        ],
-                        "value": 5
-                    },
-                    {
-                        "number_lists": [
-                            [
-                                [
-                                    100,
-                                    200,
-                                    -50
-                                ]
-                            ],
-                            [],
-                            []
-                        ],
-                        "numbers": [
-                            [],
-                            [
-                                7
-                            ],
-                            []
-                        ],
-                        "prompt": null,
-                        "result": "Madness_",
-                        "strings": [
-                            "Oh, you cant help that, were all mad here. Im mad. You are mad.",
-                            "How do you know I am mad?",
-                            "You must be, or you would not have come here."
-                        ],
-                        "value": 3
-                    },
-                    {
-                        "number_lists": [
-                            [
-                                [
-                                    100,
-                                    200,
-                                    -50
-                                ]
-                            ],
-                            [],
-                            []
-                        ],
-                        "numbers": [
-                            [],
-                            [
-                                7
-                            ],
-                            []
-                        ],
-                        "prompt": null,
-                        "result": "Madness_",
-                        "strings": [
-                            "To begin with, a dogs not mad. You grant that?",
-                            "How do you know I am mad?",
-                            "You must be, or you would not have come here."
-                        ],
-                        "value": 8
-                    }
-                ],
-                "set": [
-                    [
-                        "Tree_",
-                        "English_",
-                        "Cat_",
-                        "Talk_",
-                        "Coordinates_"
-                    ],
-                    [
-                        "Tree_",
-                        "English_",
-                        "Alice_",
-                        "Talk_",
-                        "Emotion_"
-                    ],
-                    [
-                        "Tree_",
-                        "English_",
-                        "Cat_",
-                        "Talk_"
-                    ]
-                ]
-            },
-            {
-                "context": [
                     "Alice was beginning to get very tired of sitting by her sister on the bank.",
                     "There was nothing so very remarkable in that; nor did Alice think it so very much out of the way to hear the Rabbit say to itself, “ Oh dear! Oh dear! I shall be too late!”"
                 ],
@@ -602,6 +485,123 @@
                         "English_",
                         "Alice_",
                         "Talk_"
+                    ],
+                    [
+                        "Tree_",
+                        "English_",
+                        "Cat_",
+                        "Talk_"
+                    ]
+                ]
+            },
+            {
+                "context": [
+                    "Alice was feeling a mix of curiosity and apprehension as she conversed with the Cheshire Cat.",
+                    "The Cat's ability to appear and disappear at will added to the surreal nature of their interaction."
+                ],
+                "guardrails": [],
+                "name": "alice_cat_alice_instruction_numeric",
+                "ppo": [],
+                "samples": [
+                    {
+                        "number_lists": [
+                            [
+                                [
+                                    100,
+                                    200,
+                                    -50
+                                ]
+                            ],
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            [
+                                5
+                            ],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "Madness_",
+                        "strings": [
+                            "Then it doesnt matter which way you go.",
+                            "Can you tell me a way?",
+                            "Then it doesnt matter which way you go."
+                        ],
+                        "value": 5
+                    },
+                    {
+                        "number_lists": [
+                            [
+                                [
+                                    100,
+                                    200,
+                                    -50
+                                ]
+                            ],
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            [
+                                7
+                            ],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "Madness_",
+                        "strings": [
+                            "Oh, you cant help that, were all mad here. Im mad. You are mad.",
+                            "How do you know I am mad?",
+                            "You must be, or you would not have come here."
+                        ],
+                        "value": 3
+                    },
+                    {
+                        "number_lists": [
+                            [
+                                [
+                                    100,
+                                    200,
+                                    -50
+                                ]
+                            ],
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            [
+                                7
+                            ],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "Madness_",
+                        "strings": [
+                            "To begin with, a dogs not mad. You grant that?",
+                            "How do you know I am mad?",
+                            "You must be, or you would not have come here."
+                        ],
+                        "value": 8
+                    }
+                ],
+                "set": [
+                    [
+                        "Tree_",
+                        "English_",
+                        "Cat_",
+                        "Talk_",
+                        "Coordinates_"
+                    ],
+                    [
+                        "Tree_",
+                        "English_",
+                        "Alice_",
+                        "Talk_",
+                        "Emotion_"
                     ],
                     [
                         "Tree_",

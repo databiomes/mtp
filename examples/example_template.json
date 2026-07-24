@@ -20,19 +20,6 @@
         }
     },
     "instructions": {
-        "alice_cat_alice_instruction_numeric": {
-            "type": "basic",
-            "input": [
-                "<BOS>\n",
-                "Tree_English_Cat_Talk_Coordinates_<num_-1000_1000_3>\n<string>\n",
-                "Tree_English_Alice_Talk_Emotion_<num_0_10>\n<string>\n",
-                "Tree_English_Cat_Talk_\n",
-                "<RUN>"
-            ],
-            "output": [
-                "<string>\nMadness_\n<EOS>"
-            ]
-        },
         "alice_cat_alice_continue": {
             "type": "basic",
             "input": [
@@ -57,14 +44,27 @@
                 "<RUN>"
             ],
             "output": [
-                "<string>\nAppear_\n<EOS>",
-                "<string>\nVanish_\n<EOS>"
+                "<string>\nVanish_\n<EOS>",
+                "<string>\nAppear_\n<EOS>"
+            ]
+        },
+        "alice_cat_alice_instruction_numeric": {
+            "type": "basic",
+            "input": [
+                "<BOS>\n",
+                "Tree_English_Cat_Talk_Coordinates_<num_-1000_1000_3>\n<string>\n",
+                "Tree_English_Alice_Talk_Emotion_<num_0_10>\n<string>\n",
+                "Tree_English_Cat_Talk_\n",
+                "<RUN>"
+            ],
+            "output": [
+                "<string>\nMadness_\n<EOS>"
             ]
         }
     },
     "states": [],
     "example_usage": {
-        "instruction_input": "<BOS>\nTree_English_Cat_Talk_Coordinates_[-207, 454, -131]\nThen it doesnt matter which way you go.\nTree_English_Alice_Talk_Emotion_0\nCan you tell me a way?\nTree_English_Cat_Talk_\n<RUN>\n",
+        "instruction_input": "<BOS>\nTree_English_Cat_Talk_Coordinates_[-510, -361, 341]\nThen it doesnt matter which way you go.\nTree_English_Alice_Talk_Emotion_5\nCan you tell me a way?\nTree_English_Cat_Talk_\n<RUN>\n",
         "valid_model_output": "Then it doesnt matter which way you go.\nMadness_\n<EOS>",
         "guardrail_model_output": "Are you as mad as me?\nContinue_<UNK>_\n<EOS>"
     }
