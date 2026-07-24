@@ -16,7 +16,7 @@ class TestWorkflow5ContextProtocolJSON:
             inputs=protocol.input_count,
             encrypted=protocol.encrypt,
             valid=True,
-            state_machine=protocol.state_machine,
+            model_type=protocol.get_model_type(),
             tokens=protocol.tokens,
             special_tokens=protocol.special_tokens,
             instructions=protocol.instructions,
@@ -38,11 +38,11 @@ class TestWorkflow5ContextProtocolJSON:
         
         # Test that no unexpected keys are present
         expected_keys = {"$schema", "name", "context", "tokens", "special_tokens", "instruction", "encrypted", "valid",
-                         "inputs", "state_machine"}
+                         "inputs", "model_type"}
         actual_keys = set(json_output.keys())
         assert actual_keys == expected_keys
 
-        assert json_output["state_machine"] == workflow_5context_protocol.state_machine
+        assert json_output["model_type"] == workflow_5context_protocol.get_model_type().value
 
     def test_workflow_5context_protocol_name(self, workflow_5context_protocol):
         """Test that the protocol name is correct."""
@@ -239,7 +239,7 @@ class TestNumTokenWorkflow5ContextProtocolJSON:
             context=protocol.context,
             inputs=protocol.input_count,
             encrypted=protocol.encrypt,
-            state_machine=protocol.state_machine,
+            model_type=protocol.get_model_type(),
             valid=True,
             tokens=protocol.tokens,
             special_tokens=protocol.special_tokens,
