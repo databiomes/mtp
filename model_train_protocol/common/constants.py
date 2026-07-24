@@ -35,7 +35,7 @@ TokenTypeEnum: dict = {
 }
 
 
-class ModelType(Enum):
+class ModelType(str, Enum):
     """Enumeration for model types."""
     GENERATIVE = "generative"
     STATE_MACHINE = "state_machine"
