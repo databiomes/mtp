@@ -26,12 +26,12 @@ DEFAULT_STATE_MAP = {
 }
 
 
-def _make_instruction(state_map=None, input_tokensets=None) -> MultiClassifierInstruction:
+def _make_instruction(state_map=None, input_tokensets=None, context=None) -> MultiClassifierInstruction:
     """Helper to build a MultiClassifierInstruction for testing."""
     state_map = DEFAULT_STATE_MAP if state_map is None else state_map
     input_tokensets = [SIMPLE_TOKENSET] if input_tokensets is None else input_tokensets
     instruction_input = InstructionInput(tokensets=input_tokensets)
-    return MultiClassifierInstruction(input=instruction_input, state_map=state_map)
+    return MultiClassifierInstruction(input=instruction_input, state_map=state_map, context=context)
 
 
 class TestMultiClassifierInstruction:
@@ -68,6 +68,30 @@ class TestMultiClassifierInstruction:
         instruction = _make_instruction(input_tokensets=[SIMPLE_TOKENSET, USER_TOKENSET])
 
         assert len(instruction.input.tokensets) == 2
+
+    def test_context_defaults_to_empty(self):
+        """Test that omitting context leaves the instruction context empty."""
+        instruction = _make_instruction()
+
+        assert instruction.context == []
+
+    def test_context_parameter(self):
+        """Test creating a MultiClassifierInstruction with context provided at construction."""
+        context = ["Classify each message by sentiment and topic.", "Responses are JSON objects."]
+        instruction = _make_instruction(context=context)
+
+        assert instruction.context == context
+
+    def test_add_context_appends_to_constructor_context(self):
+        """Test that add_context appends to context provided at construction."""
+        instruction = _make_instruction(context=["Classify each message by sentiment and topic."])
+
+        instruction.add_context("Responses are JSON objects.")
+
+        assert instruction.context == [
+            "Classify each message by sentiment and topic.",
+            "Responses are JSON objects.",
+        ]
 
 
 class TestMultiClassifierJSONValidation:

@@ -20,12 +20,14 @@ class MultiClassifierInstruction(BaseInstruction):
     input: InstructionInput
     output: MultiClassifierOutput
 
-    def __init__(self, input: InstructionInput, state_map: Dict[str, List[str]]):
+    def __init__(self, input: InstructionInput, state_map: Dict[str, List[str]],
+                 context: List[str] | None = None):
         """
         Initializes an Instruction instance.
 
         :param input: List of tuples containing Token instances that define the input structure. This precedes the model's response.
         :param state_map: A dictionary mapping classification labels (keys) to their corresponding acceptable values (list of strings).
+        :param context: A list of strings providing background context for the instruction.
         """
         state_token: Token = Token("States",
                                    desc=f"Acceptable responses must contain exactly 1 key and 1 value for every key in this map, in any combination: {state_map}.")
@@ -34,7 +36,7 @@ class MultiClassifierInstruction(BaseInstruction):
             tokenset=state_tokenset,
             required_keys=list(state_map.keys()),
         )
-        super().__init__(input=input, output=instruction_output, context=[], name="MultiClassifierInstruction")
+        super().__init__(input=input, output=instruction_output, context=context, name="MultiClassifierInstruction")
         if not isinstance(self.output, MultiClassifierOutput):
             raise InstructionTypeError(f"Output must be an instance of MultiClassifierOutput. Got: {type(self.output)}")
         self._validate_input_snippets()

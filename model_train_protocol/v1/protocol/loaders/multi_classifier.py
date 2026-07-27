@@ -69,10 +69,10 @@ def load_multi_classifier_protocol(protocol_file: dict, protocol: "ProtocolV1",
         protocol_instruction: MultiClassifierInstruction = MultiClassifierInstruction(
             input=instr_input,
             state_map=state_map,
+            context=context,
         )
         # Reuse the 'States' token from the bloom file so its token is not re-added as a duplicate.
         protocol_instruction.output.tokenset = tokensets[-1]
-        protocol_instruction.context = context
 
         for sample in samples:
             inputs_snippets: List[Snippet] = []

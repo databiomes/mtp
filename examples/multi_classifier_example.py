@@ -68,17 +68,15 @@ alice_line_input: mtp.InstructionInput = mtp.InstructionInput(
 )
 
 # Create the Instruction. The output format (a JSON classification) is derived automatically from the state_map,
-# so we only need to provide the input and the state_map.
+# so we only need to provide the input and the state_map. Background context is optional.
 alice_line_classifier: mtp.MultiClassifierInstruction = mtp.MultiClassifierInstruction(
     input=alice_line_input,
     state_map=state_map,
+    context=[
+        "The Cheshire Cat classifies each line Alice speaks by the emotion she expresses and the intent of the line.",
+        "Each response is a JSON object with exactly the keys 'emotion' and 'intent'.",
+    ],
 )
-
-# Give the Instruction some background context.
-alice_line_classifier.add_context(
-    "The Cheshire Cat classifies each line Alice speaks by the emotion she expresses and the intent of the line.")
-alice_line_classifier.add_context(
-    "Each response is a JSON object with exactly the keys 'emotion' and 'intent'.")
 
 # Add at least 5 samples. Each output snippet must be valid JSON containing exactly the state_map keys.
 
