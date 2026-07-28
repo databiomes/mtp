@@ -6,7 +6,7 @@ import pytest
 from model_train_protocol import Instruction, FinalToken
 from model_train_protocol.common.instructions.input.InstructionInput import InstructionInput
 from model_train_protocol.common.instructions.output.InstructionOutput import InstructionOutput
-from model_train_protocol.v1 import ProtocolV1
+from model_train_protocol.v2 import ProtocolV2
 from tests.fixtures.tokens import SIMPLE_TOKENSET
 
 
@@ -15,7 +15,7 @@ class TestMinimumSamples:
 
     def test_instruction_with_less_than_minimum_samples_fails(self):
         """Test that adding an instruction with less than 3 samples raises ValueError."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
         
         # Add minimum context lines
         for i in range(10):
@@ -46,7 +46,7 @@ class TestMinimumSamples:
 
     def test_instruction_with_minimum_samples_passes(self):
         """Test that adding an instruction with exactly 3 samples succeeds."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
         
         # Add minimum context lines
         for i in range(10):
@@ -81,7 +81,7 @@ class TestMinimumSamples:
 
     def test_instruction_with_more_than_minimum_samples_passes(self):
         """Test that adding an instruction with more than 3 samples succeeds."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
         
         # Add minimum context lines
         for i in range(10):
@@ -110,7 +110,7 @@ class TestMinimumSamples:
 
     def test_instruction_with_multiple_final_tokens_insufficient_samples_fails(self):
         """Test that adding an instruction where a FinalToken has less than 3 samples raises ValueError."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
         
         # Add minimum context lines
         for i in range(10):
@@ -161,7 +161,7 @@ class TestMinimumSamples:
 
     def test_instruction_with_multiple_final_tokens_sufficient_samples_passes(self):
         """Test that adding an instruction where all FinalTokens have at least 3 samples succeeds."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
         
         # Add minimum context lines
         for i in range(10):
@@ -217,7 +217,7 @@ class TestMinimumSamples:
 
     def test_instruction_with_multiple_final_tokens_more_than_minimum_samples_passes(self):
         """Test that adding an instruction where FinalTokens have more than 3 samples succeeds."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
         
         # Add minimum context lines
         for i in range(10):

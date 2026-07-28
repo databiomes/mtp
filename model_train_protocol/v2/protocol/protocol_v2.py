@@ -2,35 +2,35 @@ from __future__ import annotations
 
 import json
 import os
-from typing import List, Optional, Set, Dict, Union
+from typing import List, Optional, Set, Dict
 
 from packaging.version import Version
 
-from model_train_protocol import Token, FinalToken, Guardrail, Instruction, InstructionInput, InstructionOutput, Snippet
+from model_train_protocol import Token, FinalToken
 from model_train_protocol.common.constants import BOS_TOKEN, EOS_TOKEN, RUN_TOKEN, PAD_TOKEN, UNK_TOKEN, NON_TOKEN, \
-    MINIMUM_TOTAL_CONTEXT_LINES, PER_FINAL_TOKEN_SAMPLE_MINIMUM, TokenTypeEnum, \
-    MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE
-from model_train_protocol.common.instructions.BaseInstruction import BaseInstruction, Sample
+    MINIMUM_TOTAL_CONTEXT_LINES, PER_FINAL_TOKEN_SAMPLE_MINIMUM, \
+    MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE, ModelType
+from model_train_protocol.common.instructions.BaseInstruction import BaseInstruction
+from model_train_protocol.common.instructions.MultiClassifierInstruction import MultiClassifierInstruction
 from model_train_protocol.common.instructions.StateMachineInstruction import StateMachineInstruction
-from model_train_protocol.common.instructions.input.StateMachineInput import StateMachineInput
-from model_train_protocol.common.tokens import TokenSet
 from model_train_protocol.common.tokens.SpecialToken import SpecialToken
 from model_train_protocol.errors import ProtocolError, ProtocolTypeError, StateMachineError
 from model_train_protocol.utils._protected import validate_string_subset, hash_string
-from model_train_protocol.v1.protocol.base import BaseProtocol
-from model_train_protocol.v1.protocol_file.protocol_file_v1 import ProtocolFileV1
-from model_train_protocol.v1.template_file.template_file_v1 import TemplateFileV1
-from model_train_protocol.v1.utils import get_default_protocol_version
+from model_train_protocol.v2.protocol.base import BaseProtocol
+from model_train_protocol.v2.protocol.loaders import load_generative_protocol, load_state_machine_protocol, \
+    load_multi_classifier_protocol
+from model_train_protocol.v2.protocol_file.protocol_file_v2 import ProtocolFileV2
+from model_train_protocol.v2.template_file.template_file_v2 import TemplateFileV2
+from model_train_protocol.v2.utils import get_default_protocol_version
 
 
-# The bloom 1.2.x field set. Pinned here rather than read from
-# model_train_protocol_schemas.structures.Protocol, which always describes the *latest* bloom
-# version (2.x, which uses `model_type` in place of `state_machine`). A versioned protocol must
-# validate against its own schema version, not whichever one the schemas package ships today.
-BLOOM_V1_REQUIRED_FIELDS: tuple[str, ...] = (
+# The bloom 2.x field set. Pinned here rather than read from
+# model_train_protocol_schemas.structures.Protocol, so that a future bloom 3.x in the schemas
+# package cannot silently change what V2 demands of a 2.x file.
+BLOOM_V2_REQUIRED_FIELDS: tuple[str, ...] = (
     "name",
     "inputs",
-    "state_machine",
+    "model_type",
     "encrypted",
     "valid",
     "context",
@@ -40,40 +40,11 @@ BLOOM_V1_REQUIRED_FIELDS: tuple[str, ...] = (
 )
 
 
-class BloomUtils:
-    """Helper class for converting bloom files into Protocol objects"""
-
-    @classmethod
-    def add_guardrails_to_instruction(cls, protocol_instruction: Union[Instruction, StateMachineInstruction],
-                                      instruction: dict):
-        for guardrail_set in instruction["guardrails"]:
-            guardrail: Guardrail = Guardrail(
-                good_prompt=guardrail_set["good_prompt"],
-                bad_prompt=guardrail_set["bad_prompt"],
-                bad_output=guardrail_set["bad_output"]
-            )
-
-            for sample in guardrail_set["bad_examples"]:
-                guardrail.add_sample(sample)
-
-            protocol_instruction.add_guardrail(guardrail=guardrail, tokenset_index=guardrail_set["index"])
-
-    @classmethod
-    def add_tokens(cls, protocol_file: dict, protocol: ProtocolV1, tokens: dict[str, Token]):
-        """Adds tokens to instructions"""
-        # Add tokens
-        for token_value, token_info in protocol_file["tokens"].items():
-            token_value = token_value[:-1] if token_value[-1] == "_" else token_value
-            token_class: type[Token] = TokenTypeEnum[token_info["type"]]
-            token: Token = token_class(value=token_value, **token_info)
-            protocol._add_token(token)
-            tokens[token.value] = token
-
-
-class ProtocolV1(BaseProtocol):
+class ProtocolV2(BaseProtocol):
     """Model Train Protocol (MTP) class for creating the training configuration."""
 
-    def __init__(self, name: str, inputs: int, encrypt: bool = True, state_machine: bool = False, version: Optional[Version | str] = None):
+    def __init__(self, name: str, inputs: int, encrypt: bool = True, state_machine: bool = False,
+                 version: Optional[Version | str] = None):
         """
         Initialize the Model Train Protocol (MTP)
 
@@ -107,7 +78,7 @@ class ProtocolV1(BaseProtocol):
         return self._version
 
     @classmethod
-    def from_json(cls, protocol_file: dict) -> 'ProtocolV1':
+    def from_json(cls, protocol_file: dict) -> 'ProtocolV2':
         """
         Loads a Protocol from a JSON representation.
 
@@ -115,7 +86,7 @@ class ProtocolV1(BaseProtocol):
         :param protocol_file: The JSON representation of the Protocol.
         :return: A Protocol instance.
         """
-        for field in BLOOM_V1_REQUIRED_FIELDS:
+        for field in BLOOM_V2_REQUIRED_FIELDS:
             if field not in protocol_file:
                 raise ProtocolError(f"Missing required field '{field}' in protocol JSON.")
 
@@ -123,84 +94,22 @@ class ProtocolV1(BaseProtocol):
         inputs: int = protocol_file["inputs"]
         encrypt: bool = protocol_file["encrypted"]
 
-        state_machine: bool = protocol_file["state_machine"]
-        protocol = ProtocolV1(name=name, inputs=inputs, encrypt=encrypt, state_machine=state_machine)
+        model_type: ModelType = ModelType(protocol_file["model_type"])
+        protocol = ProtocolV2(name=name, inputs=inputs, encrypt=encrypt,
+                              state_machine=(model_type == ModelType.STATE_MACHINE))
         protocol.context = protocol_file["context"]
 
         tokens: dict[str, Token] = {}
 
-        if state_machine:
-            return cls._load_state_machine_protocol(protocol_file=protocol_file, protocol=protocol, tokens=tokens)
-
-        # Add tokens
-        BloomUtils.add_tokens(protocol_file=protocol_file, protocol=protocol, tokens=tokens)
-
-        # Add instructions
-        instruction_info = protocol_file["instruction"]
-        for i, instruction in enumerate(instruction_info["sets"]):
-            if "name" in instruction:
-                instruction_name = instruction["name"]
-            else:
-                instruction_name = f"Instruction_{i}"
-            context: List[str] = instruction["context"]
-            tokensets: List[TokenSet] = []
-            final_tokens: List[FinalToken] = []
-            for token_set in instruction["set"]:
-                tokensets.append(TokenSet([tokens[token_value] for token_value in token_set]))
-
-            samples: List[Sample] = []
-            for sample in instruction["samples"]:
-                input_lines: List[str] = sample["strings"][:-1]
-                output_line: str = sample["strings"][-1]
-                result_token: FinalToken = tokens[sample["result"]]  # type: ignore
-                final_tokens.append(result_token)
-                samples.append(Sample(input=input_lines, output=output_line, prompt=None, numbers=sample["numbers"],
-                                      number_lists=sample["number_lists"], result=result_token, value=sample["value"]))
-
-            instr_input: InstructionInput = InstructionInput(
-                tokensets=tokensets[:-1],
-            )
-
-            instr_output: InstructionOutput = InstructionOutput(
-                tokenset=tokensets[-1],
-                final=final_tokens,
-            )
-
-            protocol_instruction: Instruction = Instruction(
-                name=instruction_name,
-                input=instr_input,
-                output=instr_output,
-                context=context
-            )
-
-            for sample in samples:
-                inputs_snippets: List[Snippet] = []
-                for i, sample_input in enumerate(sample.input):
-                    inputs_snippets.append(
-                        tokensets[i].create_snippet(string=sample_input, number_lists=sample.number_lists[i] if len(
-                            sample.number_lists[i]) > 0 else None,
-                                                    numbers=sample.numbers[i] if len(sample.numbers[i]) > 0 else None))
-
-                outputs_snippet: Snippet = tokensets[-1].create_snippet(
-                    string=sample.output,
-                    number_lists=sample.number_lists[-1] if len(sample.number_lists[-1]) > 0 else None
-                    , numbers=sample.numbers[-1] if len(sample.numbers[-1]) > 0 else None
-                )
-
-                final_token: FinalToken = sample.result
-
-                protocol_instruction.add_sample(
-                    input_snippets=inputs_snippets,
-                    output_snippet=outputs_snippet,
-                    output_value=sample.value,
-                    final=final_token,
-                )
-
-            # Add guardrails
-            BloomUtils.add_guardrails_to_instruction(protocol_instruction=protocol_instruction, instruction=instruction)
-            protocol.add_instruction(protocol_instruction)
-
-        return protocol
+        # Dispatch to the loader for the protocol's model type.
+        if model_type == ModelType.STATE_MACHINE:
+            return load_state_machine_protocol(protocol_file=protocol_file, protocol=protocol, tokens=tokens)
+        elif model_type == ModelType.MULTI_CLASSIFICATION:
+            return load_multi_classifier_protocol(protocol_file=protocol_file, protocol=protocol, tokens=tokens)
+        elif model_type == ModelType.GENERATIVE:
+            return load_generative_protocol(protocol_file=protocol_file, protocol=protocol, tokens=tokens)
+        else:
+            raise ProtocolTypeError(f"Unknown model type '{model_type}' in protocol JSON.")
 
     def add_context(self, context: str):
         """Adds a line of context to the model."""
@@ -287,7 +196,20 @@ class ProtocolV1(BaseProtocol):
         if instruction.has_guardrails:
             self.has_guardrails = True
 
-    def get_protocol_file(self, valid: bool) -> ProtocolFileV1:
+    def get_model_type(self) -> ModelType:
+        """
+        Determines the ModelTypeEnum for this protocol based on its configuration and instructions.
+
+        :return: STATE_MACHINE if the protocol is a state machine, MULTI_CLASSIFICATION if it contains a
+            MultiClassifierInstruction, otherwise GENERATIVE.
+        """
+        if self.state_machine:
+            return ModelType.STATE_MACHINE
+        if any(isinstance(instruction, MultiClassifierInstruction) for instruction in self.instructions):
+            return ModelType.MULTI_CLASSIFICATION
+        return ModelType.GENERATIVE
+
+    def get_protocol_file(self, valid: bool) -> ProtocolFileV2:
         """
         Prepares and returns the ProtocolFile representation of the protocol.
 
@@ -295,14 +217,14 @@ class ProtocolV1(BaseProtocol):
         """
         self._prep_protocol()
 
-        return ProtocolFileV1(
+        return ProtocolFileV2(
             name=self.name, context=self.context, inputs=self.input_count, encrypted=self.encrypt,
-            valid=valid, state_machine=self.state_machine,
+            valid=valid, model_type=self.get_model_type(),
             tokens=self.tokens, special_tokens=self.special_tokens, instructions=self.instructions,
             bloom_version=self.bloom_version
         )
 
-    def get_template_file(self) -> TemplateFileV1:
+    def get_template_file(self) -> TemplateFileV2:
         """
         Prepares and returns the TemplateFile representation of the protocol.
 
@@ -310,12 +232,12 @@ class ProtocolV1(BaseProtocol):
         """
         self._prep_protocol()
 
-        return TemplateFileV1(
+        return TemplateFileV2(
             instructions=list(self.instructions),
             inputs=self.input_count,
             encrypt=self.encrypt,
             has_guardrails=self.has_guardrails,
-            state_machine=self.state_machine,
+            model_type=self.get_model_type(),
         )
 
     def save(self, name: Optional[str] = None, path: Optional[str] = None):
@@ -439,59 +361,6 @@ class ProtocolV1(BaseProtocol):
         if not isinstance(list(self.instructions)[0], StateMachineInstruction):
             raise StateMachineError(
                 f"The instruction in a state machine protocol must be a StateMachineInstruction. Found instruction of type {type(list(self.instructions)[0])}.")
-
-    @classmethod
-    def _load_state_machine_protocol(cls, protocol_file: dict, protocol: 'ProtocolV1',
-                                     tokens: dict[str, Token]) -> 'ProtocolV1':
-        """Loads a state machine protocol from a JSON representation."""
-        # Add tokens
-        BloomUtils.add_tokens(protocol_file=protocol_file, protocol=protocol, tokens=tokens)
-
-        instruction_info = protocol_file["instruction"]
-        for instruction in instruction_info["sets"]:
-            context: List[str] = instruction["context"]
-            tokensets: List[TokenSet] = []
-            for token_set in instruction["set"]:
-                tokensets.append(TokenSet([tokens[token_value] for token_value in token_set]))
-
-            samples: List[Sample] = []
-            for sample in instruction["samples"]:
-                input_lines: List[str] = sample["strings"][:-1]
-                output_line: str = sample["strings"][-1]
-                result_token: FinalToken = tokens[sample["result"]]  # type: ignore
-                samples.append(Sample(input=input_lines, output=output_line, prompt=None, numbers=sample["numbers"],
-                                      number_lists=sample["number_lists"], result=result_token, value=sample["value"]))
-
-            instr_input: StateMachineInput = StateMachineInput(
-                tokensets=tokensets[:-1],
-            )
-
-            states: list[str] = list(dict.fromkeys([sample.output for sample in samples]))
-            protocol_instruction: StateMachineInstruction = StateMachineInstruction(
-                input=instr_input,
-                states=states,
-            )
-            protocol_instruction.output.tokenset = tokensets[-1]
-            protocol_instruction.context = context
-
-            for sample in samples:
-                inputs_snippets: List[Snippet] = []
-                for i, sample_input in enumerate(sample.input):
-                    inputs_snippets.append(
-                        tokensets[i].create_snippet(string=sample_input, number_lists=sample.number_lists[i] if len(
-                            sample.number_lists[i]) > 0 else None,
-                                                    numbers=sample.numbers[i] if len(sample.numbers[i]) > 0 else None))
-
-                protocol_instruction.add_sample(
-                    input_snippets=inputs_snippets,
-                    state=sample.output,
-                )
-
-            # Add guardrails
-            BloomUtils.add_guardrails_to_instruction(protocol_instruction=protocol_instruction, instruction=instruction)
-            protocol.add_instruction(protocol_instruction)
-
-        return protocol
 
     def _prep_protocol(self):
         """

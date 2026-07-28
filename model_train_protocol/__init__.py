@@ -14,7 +14,9 @@ from .common.instructions.output.StateMachineOutput import StateMachineOutput
 from .common.instructions.MultiClassifierInstruction import MultiClassifierInstruction
 from .common.instructions.output.MultiClassifierOutput import MultiClassifierOutput
 from .common.guardrails import Guardrail
-from model_train_protocol.v1.protocol.protocol_v1 import ProtocolV1 as Protocol
+# `Protocol` aliases the current protocol version. V1 (bloom 1.2.x, `state_machine`) stays
+# importable from model_train_protocol.v1 for reading legacy bloom files.
+from model_train_protocol.v2.protocol.protocol_v2 import ProtocolV2 as Protocol
 from .errors import (
     MTPError,
     MTPValueError,
