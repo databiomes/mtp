@@ -9,8 +9,8 @@ class TestWorkflow5ContextProtocolJSON:
     def _get_json_output(self, protocol):
         """Helper method to get JSON output from a protocol."""
         protocol._prep_protocol()
-        from model_train_protocol.v1 import ProtocolFileV1
-        protocol_file = ProtocolFileV1(
+        from model_train_protocol.v2 import ProtocolFileV2
+        protocol_file = ProtocolFileV2(
             name=protocol.name,
             context=protocol.context,
             inputs=protocol.input_count,
@@ -233,8 +233,8 @@ class TestNumTokenWorkflow5ContextProtocolJSON:
     def _get_json_output(self, protocol):
         """Helper method to get JSON output from a protocol."""
         protocol._prep_protocol()
-        from model_train_protocol.v1 import ProtocolFileV1
-        protocol_file = ProtocolFileV1(
+        from model_train_protocol.v2 import ProtocolFileV2
+        protocol_file = ProtocolFileV2(
             name=protocol.name,
             context=protocol.context,
             inputs=protocol.input_count,

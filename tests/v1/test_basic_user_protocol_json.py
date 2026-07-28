@@ -1,10 +1,10 @@
 """
-Test JSON creation for NumListToken protocol.
+Test JSON creation for basic user protocol.
 """
 
 
-class TestNumListTokenProtocolJSON:
-    """Test JSON structure and content for NumListToken protocol."""
+class TestBasicUserProtocolJSON:
+    """Test JSON structure and content for basic user protocol."""
 
     def _get_json_output(self, protocol):
         """Helper method to get JSON output from a protocol."""
@@ -16,7 +16,7 @@ class TestNumListTokenProtocolJSON:
             inputs=protocol.input_count,
             encrypted=protocol.encrypt,
             valid=True,
-            model_type=protocol.get_model_type(),
+            state_machine=protocol.state_machine,
             tokens=protocol.tokens,
             special_tokens=protocol.special_tokens,
             instructions=protocol.instructions,
@@ -24,10 +24,10 @@ class TestNumListTokenProtocolJSON:
         )
         return protocol_file.to_json()
 
-    def test_numlisttoken_protocol_json_structure(self, numlisttoken_protocol):
+    def test_basic_user_protocol_json_structure(self, basic_user_protocol):
         """Test that the JSON has the correct top-level structure."""
         # Get the JSON output
-        json_output = self._get_json_output(numlisttoken_protocol)
+        json_output = self._get_json_output(basic_user_protocol)
         
         # Test top-level keys
         assert "name" in json_output
@@ -38,40 +38,43 @@ class TestNumListTokenProtocolJSON:
         
         # Test that no unexpected keys are present
         expected_keys = {"$schema", "name", "context", "tokens", "special_tokens", "instruction", "encrypted", "valid",
-                         "inputs", "model_type"}
+                         "inputs", "state_machine"}
         actual_keys = set(json_output.keys())
         assert actual_keys == expected_keys
 
-        assert json_output["model_type"] == numlisttoken_protocol.get_model_type().value
+        assert json_output["state_machine"] == basic_user_protocol.state_machine
 
-    def test_numlisttoken_protocol_name(self, numlisttoken_protocol):
+    def test_basic_user_protocol_name(self, basic_user_protocol):
         """Test that the protocol name is correct."""
-        json_output = self._get_json_output(numlisttoken_protocol)
+        json_output = self._get_json_output(basic_user_protocol)
         
-        assert json_output["name"] == "numlisttoken_protocol"
+        assert json_output["name"] == "basic_user"
 
-    def test_numlisttoken_protocol_context(self, numlisttoken_protocol):
+    def test_basic_user_protocol_context(self, basic_user_protocol):
         """Test that the context is correctly included."""
-        json_output = self._get_json_output(numlisttoken_protocol)
+        json_output = self._get_json_output(basic_user_protocol)
         
         assert "context" in json_output
         assert isinstance(json_output["context"], list)
         assert len(json_output["context"]) == 10
-        assert json_output["context"][0] == "This protocol uses numeric list tokens."
-        assert json_output["context"][1] == "This is a second context line for numeric list tokens."
+        assert json_output["context"][0] == "This is a user context line."
 
-    def test_numlisttoken_protocol_tokens(self, numlisttoken_protocol):
+    def test_basic_user_protocol_tokens(self, basic_user_protocol):
         """Test that tokens are correctly included."""
-        json_output = self._get_json_output(numlisttoken_protocol)
+        json_output = self._get_json_output(basic_user_protocol)
         
         assert "tokens" in json_output
         assert isinstance(json_output["tokens"], dict)
         
         # Check that we have the expected tokens
         token_keys = set(json_output["tokens"].keys())
-        expected_tokens = {"Tree_", "English_", "Cat_", "Talk_", "Coordinates_"}
-        # Check that at least some expected tokens are present (tokens may be stored as concatenated values)
+        expected_tokens = {"Tree_", "English_", "Alice_", "Talk_", "Result_"}
+        special_tokens = {"<BOS>", "<EOS>", "<PAD>", "<RUN>", "<UNK>"}
+        
+        # Check that we have at least some expected tokens (not all may be present)
         assert len(expected_tokens.intersection(token_keys)) > 0, f"Expected at least some of {expected_tokens} to be present in {token_keys}"
+        # Check that at least some special tokens are present
+        assert len(special_tokens.intersection(token_keys)) > 0, f"Expected at least some of {special_tokens} to be present in {token_keys}"
         
         # Test token structure
         for token_key, token_info in json_output["tokens"].items():
@@ -86,26 +89,24 @@ class TestNumListTokenProtocolJSON:
             assert token_info["desc"] is None or isinstance(token_info["desc"], str)
             assert token_info["special"] is None or isinstance(token_info["special"], str)
 
-    def test_numlisttoken_protocol_numeric_tokens(self, numlisttoken_protocol):
-        """Test that numeric tokens are correctly identified."""
-        json_output = self._get_json_output(numlisttoken_protocol)
+    def test_basic_user_protocol_token_types(self, basic_user_protocol):
+        """Test that token types are correctly identified."""
+        json_output = self._get_json_output(basic_user_protocol)
         
         tokens = json_output["tokens"]
         
-        # Scores_ should be marked as a numeric token
-        if "Scores_" in tokens:
-            assert tokens["Scores_"]["num"] is True
+        # Alice should be a regular token now
+        if "Alice_" in tokens:
+            assert tokens["Alice_"]["num"] is False
         
-        # Other tokens should not be numeric tokens (excluding special tokens)
+        # Other tokens should be regular tokens
         for token_key, token_info in tokens.items():
-            if token_key not in ["Scores_", "<BOS>", "<EOS>", "<PAD>", "<RUN>", "<UNK>"]:
-                # Some tokens might be marked as numeric due to the way the protocol processes them
-                # We'll just check that Scores_ is definitely numeric
-                pass
+            if token_key not in ["<BOS>", "<EOS>", "<PAD>", "<RUN>", "<UNK>"]:
+                assert token_info["num"] is False
 
-    def test_numlisttoken_protocol_special_tokens(self, numlisttoken_protocol):
+    def test_basic_user_protocol_special_tokens(self, basic_user_protocol):
         """Test that special tokens are correctly included."""
-        json_output = self._get_json_output(numlisttoken_protocol)
+        json_output = self._get_json_output(basic_user_protocol)
         
         assert "special_tokens" in json_output
         assert isinstance(json_output["special_tokens"], list)
@@ -114,9 +115,9 @@ class TestNumListTokenProtocolJSON:
         assert len(json_output["special_tokens"]) > 0
         assert all(isinstance(token, str) for token in json_output["special_tokens"])
 
-    def test_numlisttoken_protocol_instruction(self, numlisttoken_protocol):
+    def test_basic_user_protocol_instruction(self, basic_user_protocol):
         """Test that instruction structure is correct."""
-        json_output = self._get_json_output(numlisttoken_protocol)
+        json_output = self._get_json_output(basic_user_protocol)
         
         assert "instruction" in json_output
         instruction = json_output["instruction"]
@@ -168,57 +169,75 @@ class TestNumListTokenProtocolJSON:
         assert "strings" in sample
         assert "prompt" in sample
         assert "numbers" in sample
+        assert "number_lists" in sample
         assert "result" in sample
         assert "value" in sample
         
         # Test sample data types
         assert isinstance(sample["strings"], list)
-        assert isinstance(sample["prompt"], (str, type(None)))
+        assert isinstance(sample["prompt"], str)
         assert isinstance(sample["numbers"], (list, type(None)))
+        assert isinstance(sample["number_lists"], (list, type(None)))
         assert isinstance(sample["result"], str)
-        assert isinstance(sample["value"], (str, int, float, list, type(None)))
+        assert isinstance(sample["value"], (str, type(None)))
         
         # Test sample content
         assert len(sample["strings"]) == 3  # Three context snippets (2 context + 1 response)
-        assert isinstance(sample["numbers"], (list, type(None)))  # Can be list or None
-        assert sample["result"] == "Position__"
-        assert isinstance(sample["value"], (str, int, float, list, type(None)))
+        assert sample["result"] == "End__"
+        assert sample["value"] is None  # No value for user instruction
         
-        # Test numeric values (if number is not None)
-        if sample["numbers"] is not None:
-            assert len(sample["numbers"]) == 3  # Three context lines
-            for num_list in sample["numbers"]:
-                assert isinstance(num_list, list)
-                assert len(num_list) in [0, 1]  # Can be empty or have 1 element
-                if len(num_list) > 0:
-                    assert isinstance(num_list[0], list)  # NumListToken contains lists of numbers
-                    assert len(num_list[0]) >= 0  # Can be empty
+        # User instruction should have prompts
+        assert len(sample["prompt"]) > 0
 
-    def test_numlisttoken_protocol_guardrails(self, numlisttoken_protocol):
+    def test_basic_user_protocol_empty_guardrails(self, basic_user_protocol):
         """Test that guardrails are correctly included in instruction sets."""
-        json_output = self._get_json_output(numlisttoken_protocol)
+        json_output = self._get_json_output(basic_user_protocol)
         
+        # Basic user protocol should have no guardrails
         sets = json_output["instruction"]["sets"]
         for instruction_set in sets:
             assert "guardrails" in instruction_set
             assert isinstance(instruction_set["guardrails"], list)
             assert len(instruction_set["guardrails"]) == 0
 
-    def test_numlisttoken_protocol_numbers(self, numlisttoken_protocol):
+    def test_basic_user_protocol_one_guardrail(self, basic_user_protocol_with_guardrail):
+        """Test that guardrails are correctly included in instruction sets."""
+        json_output = self._get_json_output(basic_user_protocol_with_guardrail)
+
+        # Basic user protocol should have guardrails
+        sets = json_output["instruction"]["sets"]
+        guardrails_found = False
+        for instruction_set in sets:
+            assert "guardrails" in instruction_set
+            assert isinstance(instruction_set["guardrails"], list)
+            if len(instruction_set["guardrails"]) > 0:
+                guardrails_found = True
+                # Check guardrail structure
+                guardrail = instruction_set["guardrails"][0]
+                assert "index" in guardrail
+                assert "bad_output" in guardrail
+                assert "bad_prompt" in guardrail
+                assert "good_prompt" in guardrail
+                assert "bad_examples" in guardrail
+                assert isinstance(guardrail["bad_examples"], list)
+                assert len(guardrail["bad_examples"]) >= 3
+        assert guardrails_found, "Expected to find at least one guardrail in instruction sets"
+
+    def test_basic_user_protocol_numbers(self, basic_user_protocol):
         """Test that numbers are correctly included."""
-        json_output = self._get_json_output(numlisttoken_protocol)
+        json_output = self._get_json_output(basic_user_protocol)
         
         assert "numbers" not in json_output
 
-    def test_numlisttoken_protocol_batches(self, numlisttoken_protocol):
+    def test_basic_user_protocol_batches(self, basic_user_protocol):
         """Test that batches are correctly included."""
-        json_output = self._get_json_output(numlisttoken_protocol)
+        json_output = self._get_json_output(basic_user_protocol)
         
         assert "batches" not in json_output
 
-    def test_numlisttoken_protocol_token_descriptions(self, numlisttoken_protocol):
+    def test_basic_user_protocol_token_descriptions(self, basic_user_protocol):
         """Test that token descriptions are correctly included."""
-        json_output = self._get_json_output(numlisttoken_protocol)
+        json_output = self._get_json_output(basic_user_protocol)
         
         tokens = json_output["tokens"]
         
@@ -227,27 +246,24 @@ class TestNumListTokenProtocolJSON:
             assert tokens["Tree"]["desc"] == "A tree token"
         if "English" in tokens:
             assert tokens["English"]["desc"] == "English language token"
-        if "Cat" in tokens:
-            assert tokens["Cat"]["desc"] == "A cat token"
+        if "Alice" in tokens:
+            assert tokens["Alice"]["desc"] == "User token"
         if "Talk" in tokens:
             assert tokens["Talk"]["desc"] == "A talk token"
-        if "Scores" in tokens:
-            assert tokens["Scores"]["desc"] == "Scores token"
+        if "Result" in tokens:
+            assert tokens["Result"]["desc"] == "Result token"
 
-    def test_numlisttoken_protocol_token_types(self, numlisttoken_protocol):
+    def test_basic_user_protocol_token_types_final(self, basic_user_protocol):
         """Test that token types are correctly set."""
-        json_output = self._get_json_output(numlisttoken_protocol)
+        json_output = self._get_json_output(basic_user_protocol)
         
         tokens = json_output["tokens"]
         
-        # Scores_ should be a numeric token, others should be regular tokens (excluding special tokens)
+        # Alice should be a regular token, others should be regular tokens
         for token_key, token_info in tokens.items():
-            if token_key == "Scores_":
-                assert token_info["num"] is True
-            elif token_key not in ["<BOS>", "<EOS>", "<PAD>", "<RUN>", "<UNK>"]:
-                # Some tokens might be marked as numeric due to the way the protocol processes them
-                # We'll just check that Scores_ is definitely numeric
-                pass
-            # Some tokens might have special values, so we'll just check that special is a string or None
-            assert isinstance(token_info["special"], (str, type(None)))
-
+            if token_key in ["<BOS>", "<EOS>", "<PAD>", "<RUN>", "<UNK>", "<NON>"]:
+                # Special tokens
+                assert token_info["special"] is not None
+            else:
+                assert token_info["num"] is False
+                assert token_info["special"] is None

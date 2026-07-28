@@ -7,7 +7,7 @@ from model_train_protocol.common.constants import TokenTypeEnum
 from model_train_protocol.common.instructions.StateMachineInstruction import StateMachineInstruction
 
 if TYPE_CHECKING:
-    from model_train_protocol.v1.protocol.protocol_v1 import ProtocolV1
+    from model_train_protocol.v2.protocol.protocol_v2 import ProtocolV2
 
 
 class BloomUtils:
@@ -31,7 +31,7 @@ class BloomUtils:
             protocol_instruction.add_guardrail(guardrail=guardrail, tokenset_index=guardrail_set["index"])
 
     @classmethod
-    def add_tokens(cls, protocol_file: dict, protocol: "ProtocolV1", tokens: Dict[str, Token]):
+    def add_tokens(cls, protocol_file: dict, protocol: "ProtocolV2", tokens: Dict[str, Token]):
         """Adds all tokens defined in a bloom file to the protocol and the given token lookup."""
         for token_value, token_info in protocol_file["tokens"].items():
             token_value = token_value[:-1] if token_value[-1] == "_" else token_value

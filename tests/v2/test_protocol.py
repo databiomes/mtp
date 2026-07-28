@@ -11,7 +11,7 @@ from model_train_protocol import Token, TokenSet, Instruction, ExtendedInstructi
 from model_train_protocol.common.instructions.input.InstructionInput import InstructionInput
 from model_train_protocol.common.instructions.output.InstructionOutput import InstructionOutput
 from model_train_protocol.common.instructions.output.ExtendedResponse import ExtendedResponse
-from model_train_protocol.v1 import ProtocolV1
+from model_train_protocol.v2 import ProtocolV2
 from tests.fixtures.tokens import get_valid_keyless_tokens
 
 
@@ -20,7 +20,7 @@ class TestProtocol:
 
     def test_protocol_initialization_basic(self):
         """Test basic protocol initialization."""
-        protocol = ProtocolV1("test_protocol", inputs=3)
+        protocol = ProtocolV2("test_protocol", inputs=3)
 
         assert protocol.name == "test_protocol"
         assert protocol.input_count == 3
@@ -35,7 +35,7 @@ class TestProtocol:
 
     def test_protocol_initialization_encrypted(self):
         """Test protocol initialization with encryption."""
-        protocol = ProtocolV1("test_protocol", inputs=3, encrypt=True)
+        protocol = ProtocolV2("test_protocol", inputs=3, encrypt=True)
 
         assert protocol.encrypt is True
 
@@ -49,7 +49,7 @@ class TestProtocol:
 
     def test_protocol_initialization_unencrypted(self):
         """Test protocol initialization without encryption."""
-        protocol = ProtocolV1("test_protocol", inputs=3, encrypt=False)
+        protocol = ProtocolV2("test_protocol", inputs=3, encrypt=False)
 
         assert protocol.encrypt is False
 
@@ -67,24 +67,24 @@ class TestProtocol:
     def test_protocol_initialization_invalid_instruction_context_snippets(self):
         """Test protocol initialization with invalid context lines."""
         with pytest.raises(ValueError, match="minimum of 2 inputs"):
-            ProtocolV1("test_protocol", inputs=1)
+            ProtocolV2("test_protocol", inputs=1)
 
         with pytest.raises(ValueError, match="minimum of 2 inputs"):
-            ProtocolV1("test_protocol", inputs=0)
+            ProtocolV2("test_protocol", inputs=0)
 
         with pytest.raises(ValueError, match="minimum of 2 inputs"):
-            ProtocolV1("test_protocol", inputs=-1)
+            ProtocolV2("test_protocol", inputs=-1)
 
     def test_protocol_initialization_valid_instruction_context_snippets(self):
         """Test protocol initialization with valid context lines."""
         # Should not raise any exception
-        ProtocolV1("test_protocol", inputs=2)
-        ProtocolV1("test_protocol", inputs=3)
-        ProtocolV1("test_protocol", inputs=10)
+        ProtocolV2("test_protocol", inputs=2)
+        ProtocolV2("test_protocol", inputs=3)
+        ProtocolV2("test_protocol", inputs=10)
 
     def test_protocol_add_context(self):
         """Test adding context to protocol."""
-        protocol = ProtocolV1("test_protocol", inputs=3)
+        protocol = ProtocolV2("test_protocol", inputs=3)
 
         protocol.add_context("Context line 1")
         assert len(protocol.context) == 1
@@ -96,7 +96,7 @@ class TestProtocol:
 
     def test_protocol_add_context_multiple(self):
         """Test adding multiple context lines."""
-        protocol = ProtocolV1("test_protocol", inputs=3)
+        protocol = ProtocolV2("test_protocol", inputs=3)
 
         contexts = ["Context 1", "Context 2", "Context 3", "Context 4"]
         for context in contexts:
@@ -107,7 +107,7 @@ class TestProtocol:
 
     def test_protocol_add_context_empty_string(self):
         """Test adding empty context string."""
-        protocol = ProtocolV1("test_protocol", inputs=3)
+        protocol = ProtocolV2("test_protocol", inputs=3)
 
         protocol.add_context("")
         assert len(protocol.context) == 1
@@ -115,7 +115,7 @@ class TestProtocol:
 
     def test_protocol_add_context_none(self):
         """Test adding None context."""
-        protocol = ProtocolV1("test_protocol", inputs=3)
+        protocol = ProtocolV2("test_protocol", inputs=3)
 
         with pytest.raises(TypeError, match="Context must be a string"):
             protocol.add_context(None)
@@ -124,7 +124,7 @@ class TestProtocol:
         """Test that protocol context lines exceeding 300 characters raise an error."""
         from model_train_protocol.common.constants import MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE
         
-        protocol = ProtocolV1("test_protocol", inputs=3)
+        protocol = ProtocolV2("test_protocol", inputs=3)
 
         # Create context line with 301 characters (should fail)
         long_context = "a" * (MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE + 1)
@@ -136,7 +136,7 @@ class TestProtocol:
         """Test that protocol context lines with exactly 300 characters succeed."""
         from model_train_protocol.common.constants import MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE
         
-        protocol = ProtocolV1("test_protocol", inputs=3)
+        protocol = ProtocolV2("test_protocol", inputs=3)
 
         # Create context line with exactly 300 characters (should succeed)
         context_line = "a" * MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE
@@ -149,7 +149,7 @@ class TestProtocol:
         """Test that multiple protocol context lines at 300 characters each succeed."""
         from model_train_protocol.common.constants import MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE
         
-        protocol = ProtocolV1("test_protocol", inputs=3)
+        protocol = ProtocolV2("test_protocol", inputs=3)
 
         # Add multiple context lines, each at exactly 300 characters
         for i in range(5):
@@ -161,7 +161,7 @@ class TestProtocol:
 
     def test_protocol_add_token_basic(self):
         """Test adding basic token to protocol."""
-        protocol = ProtocolV1("test_protocol", inputs=3)
+        protocol = ProtocolV2("test_protocol", inputs=3)
         token = Token("Test", key="🔑")
 
         protocol._add_token(token)
@@ -171,7 +171,7 @@ class TestProtocol:
 
     def test_protocol_add_token_duplicate_value(self):
         """Test adding token with duplicate value."""
-        protocol = ProtocolV1("test_protocol", inputs=3)
+        protocol = ProtocolV2("test_protocol", inputs=3)
         token1 = Token("Test")
         token2 = Token("Test")
 
@@ -182,7 +182,7 @@ class TestProtocol:
 
     def test_protocol_add_token_duplicate_key(self):
         """Test adding token with duplicate key."""
-        protocol = ProtocolV1("test_protocol", inputs=3)
+        protocol = ProtocolV2("test_protocol", inputs=3)
         token1 = Token("Test1", key="🔑")
         token2 = Token("Test2", key="🔑")
 
@@ -193,7 +193,7 @@ class TestProtocol:
 
     def test_protocol_add_token_encrypted(self):
         """Test adding token to encrypted protocol."""
-        protocol = ProtocolV1("test_protocol", inputs=3, encrypt=True)
+        protocol = ProtocolV2("test_protocol", inputs=3, encrypt=True)
         token = Token("Test")  # No key provided
 
         protocol._add_token(token)
@@ -204,7 +204,7 @@ class TestProtocol:
 
     def test_protocol_add_token_unencrypted(self):
         """Test adding token to unencrypted protocol."""
-        protocol = ProtocolV1("test_protocol", inputs=3, encrypt=False)
+        protocol = ProtocolV2("test_protocol", inputs=3, encrypt=False)
         token = Token("Test")  # No key provided
 
         protocol._add_token(token)
@@ -215,7 +215,7 @@ class TestProtocol:
 
     def test_protocol_add_token_with_key(self):
         """Test adding token with existing key."""
-        protocol = ProtocolV1("test_protocol", inputs=3)
+        protocol = ProtocolV2("test_protocol", inputs=3)
         token = Token("Test", key="🔑")
 
         protocol._add_token(token)
@@ -226,7 +226,7 @@ class TestProtocol:
 
     def test_protocol_add_instruction_basic(self):
         """Test adding basic instruction to protocol."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
 
         # Create tokens
         token1 = Token("Token1", key="🔑")
@@ -298,7 +298,7 @@ class TestProtocol:
 
     def test_protocol_add_instruction_duplicate(self):
         """Test adding duplicate instruction."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
 
         # Create instruction
         token1 = Token("Token1", key="🔑")
@@ -364,7 +364,7 @@ class TestProtocol:
 
     def test_protocol_add_multiple_instructions_non_conflicting_names(self):
         """Test that adding an instruction with the same name raises an error and stops."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
 
         # Create first instruction
         token1 = Token("Token1", key="🔑")
@@ -421,7 +421,7 @@ class TestProtocol:
 
     def test_protocol_add_multiple_instructions_conflicting_names(self):
         """Test adding multiple instructions with conflicting names raises error."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
 
         # Create first instruction
         token1 = Token("Token1", key="🔑")
@@ -485,7 +485,7 @@ class TestProtocol:
 
     def test_protocol_add_instruction_conflicting_name_after_multiple(self):
         """Test adding instruction with conflicting name after multiple non-conflicting ones."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
 
         # Create tokens
         token1 = Token("Token1", key="🔑")
@@ -578,7 +578,7 @@ class TestProtocol:
 
     def test_protocol_add_instruction_invalid_instruction_context_snippets(self):
         """Test adding instruction with invalid context lines."""
-        protocol = ProtocolV1("test_protocol", inputs=3)
+        protocol = ProtocolV2("test_protocol", inputs=3)
 
         # Create instruction with wrong context lines (2 instead of 3)
         token1 = Token("Token1", key="🔑")
@@ -619,7 +619,7 @@ class TestProtocol:
 
     def test_protocol_save_basic(self, temp_directory):
         """Test basic protocol saving."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
 
         # Add context
         protocol.add_context("Context line 1")
@@ -676,7 +676,7 @@ class TestProtocol:
 
     def test_protocol_save_default_name(self, temp_directory):
         """Test protocol saving with default name."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
 
         # Add context and instruction
         protocol.add_context("Context line 1")
@@ -732,7 +732,7 @@ class TestProtocol:
 
     def test_protocol_save_default_path(self):
         """Test protocol saving with default path."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
 
         # Add context and instruction
         protocol.add_context("Context line 1")
@@ -788,7 +788,7 @@ class TestProtocol:
 
     def test_protocol_template_basic(self, temp_directory):
         """Test basic protocol templating."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
 
         # Add context and instruction
         protocol.add_context("Context line 1")
@@ -844,7 +844,7 @@ class TestProtocol:
 
     def test_protocol_template_default_path(self):
         """Test protocol templating with default path."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
 
         # Add context and instruction
         protocol.add_context("Context line 1")
@@ -900,7 +900,7 @@ class TestProtocol:
 
     def test_protocol_save_no_instructions(self):
         """Test saving protocol with no instructions."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
 
         # Add context but no instructions
         protocol.add_context("Context line 1")
@@ -911,7 +911,7 @@ class TestProtocol:
 
     def test_protocol_template_no_instructions(self):
         """Test templating protocol with no instructions."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
 
         # Add context but no instructions
         protocol.add_context("Context line 1")
@@ -922,7 +922,7 @@ class TestProtocol:
 
     def test_protocol_assign_key_encrypted(self):
         """Test key assignment for encrypted protocol."""
-        protocol = ProtocolV1("test_protocol", inputs=3, encrypt=True)
+        protocol = ProtocolV2("test_protocol", inputs=3, encrypt=True)
         token = Token("Test")  # No key provided
 
         protocol._assign_key(token)
@@ -932,7 +932,7 @@ class TestProtocol:
 
     def test_protocol_assign_key_unencrypted(self):
         """Test key assignment for unencrypted protocol."""
-        protocol = ProtocolV1("test_protocol", inputs=3, encrypt=False)
+        protocol = ProtocolV2("test_protocol", inputs=3, encrypt=False)
         token = Token("Test")  # No key provided
 
         protocol._assign_key(token)
@@ -941,7 +941,7 @@ class TestProtocol:
 
     def test_protocol_assign_key_existing_key(self):
         """Test key assignment for token with existing key."""
-        protocol = ProtocolV1("test_protocol", inputs=3, encrypt=True)
+        protocol = ProtocolV2("test_protocol", inputs=3, encrypt=True)
         token = Token("Test", key="🔑")  # Key already provided
 
         protocol._assign_key(token)
@@ -950,7 +950,7 @@ class TestProtocol:
 
     def test_protocol_set_guardrails(self):
         """Test setting guardrails in protocol."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
 
         # Create tokens and token sets
         user_token = Token("User", key="👤")
@@ -1008,7 +1008,7 @@ class TestProtocol:
 
     def test_protocol_add_default_special_tokens(self):
         """Test adding default special tokens."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
 
         # Add default special tokens
         protocol._add_default_special_tokens()
@@ -1017,7 +1017,7 @@ class TestProtocol:
 
     def test_protocol_add_default_special_tokens_with_guardrails(self):
         """Test adding default special tokens with guardrails."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
 
         # Add guardrails
         protocol.guardrails["test"] = ["bad_output", "bad_prompt", "good_prompt", ["sample1", "sample2", "sample3"]]
@@ -1029,7 +1029,7 @@ class TestProtocol:
 
     def test_protocol_prep_protocol(self):
         """Test protocol preparation."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
 
         # Add context and instruction
         protocol.add_context("Context line 1")
@@ -1081,7 +1081,7 @@ class TestProtocol:
 
     def test_protocol_prep_protocol_no_instructions(self):
         """Test protocol preparation with no instructions."""
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
 
         # Add context but no instructions
         protocol.add_context("Context line 1")
@@ -1100,7 +1100,7 @@ class TestProtocol:
         """Test that protocol validation fails when total context lines is less than minimum."""
         from model_train_protocol.common.constants import MINIMUM_TOTAL_CONTEXT_LINES
         
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
         
         # Add protocol context lines that are less than minimum (subtract 5 from minimum)
         insufficient_context_lines = MINIMUM_TOTAL_CONTEXT_LINES - 5
@@ -1143,7 +1143,7 @@ class TestProtocol:
         """Test that protocol validation succeeds when protocol + instruction contexts total minimum or more."""
         from model_train_protocol.common.constants import MINIMUM_TOTAL_CONTEXT_LINES
         
-        protocol = ProtocolV1("test_protocol", inputs=2)
+        protocol = ProtocolV2("test_protocol", inputs=2)
         
         # Split minimum context lines between protocol and instruction (half each)
         protocol_context_lines = MINIMUM_TOTAL_CONTEXT_LINES // 2
@@ -1188,14 +1188,14 @@ class TestProtocol:
     @pytest.mark.parametrize("instruction_context_snippets", [2, 3, 5, 10])
     def test_protocol_various_instruction_context_snippets(self, instruction_context_snippets):
         """Test protocol with various context lines."""
-        protocol = ProtocolV1("test_protocol", inputs=instruction_context_snippets)
+        protocol = ProtocolV2("test_protocol", inputs=instruction_context_snippets)
 
         assert protocol.input_count == instruction_context_snippets
 
     @pytest.mark.parametrize("encrypt", [True, False])
     def test_protocol_encryption_settings(self, encrypt):
         """Test protocol with different encryption settings."""
-        protocol = ProtocolV1("test_protocol", inputs=3, encrypt=encrypt)
+        protocol = ProtocolV2("test_protocol", inputs=3, encrypt=encrypt)
 
         assert protocol.encrypt == encrypt
 
@@ -1204,15 +1204,15 @@ class TestProtocol:
         names = ["test_protocol", "my_model", "weather_mage", "alice_cat"]
 
         for name in names:
-            protocol = ProtocolV1(name, inputs=3)
+            protocol = ProtocolV2(name, inputs=3)
             assert protocol.name == name
 
-    def test_protocol_from_json_round_trip(self, basic_simple_protocol: ProtocolV1):
+    def test_protocol_from_json_round_trip(self, basic_simple_protocol: ProtocolV2):
         """Test Protocol.from_json round trip with a valid protocol JSON."""
         basic_simple_protocol._prep_protocol()
         protocol_json: dict[str, object] = basic_simple_protocol.get_protocol_file(valid=True).to_json()
 
-        loaded_protocol: ProtocolV1 = ProtocolV1.from_json(protocol_json)
+        loaded_protocol: ProtocolV2 = ProtocolV2.from_json(protocol_json)
 
         assert loaded_protocol.name == basic_simple_protocol.name
         assert loaded_protocol.input_count == basic_simple_protocol.input_count
@@ -1220,33 +1220,33 @@ class TestProtocol:
         assert len(loaded_protocol.instructions) == len(basic_simple_protocol.instructions)
         assert len(loaded_protocol.tokens) > 0
 
-    def test_protocol_from_json_missing_required_field(self, basic_simple_protocol: ProtocolV1):
+    def test_protocol_from_json_missing_required_field(self, basic_simple_protocol: ProtocolV2):
         """Test Protocol.from_json raises when a required field is missing."""
         basic_simple_protocol._prep_protocol()
         protocol_json: dict[str, object] = basic_simple_protocol.get_protocol_file(valid=True).to_json()
         protocol_json.pop("name")
 
         with pytest.raises(ProtocolError, match="Missing required field 'name'"):
-            ProtocolV1.from_json(protocol_json)
+            ProtocolV2.from_json(protocol_json)
 
-    def test_protocol_from_json_generative_model_type(self, basic_simple_protocol: ProtocolV1):
+    def test_protocol_from_json_generative_model_type(self, basic_simple_protocol: ProtocolV2):
         """Test Protocol.from_json dispatches a generative bloom to the generative loader."""
         basic_simple_protocol._prep_protocol()
         protocol_json: dict[str, object] = basic_simple_protocol.get_protocol_file(valid=True).to_json()
         assert protocol_json["model_type"] == "generative"
 
-        loaded_protocol: ProtocolV1 = ProtocolV1.from_json(protocol_json)
+        loaded_protocol: ProtocolV2 = ProtocolV2.from_json(protocol_json)
 
         assert loaded_protocol.get_model_type().value == "generative"
         assert loaded_protocol.state_machine is False
 
-    def test_protocol_from_json_state_machine_round_trip(self, state_machine_protocol: ProtocolV1):
+    def test_protocol_from_json_state_machine_round_trip(self, state_machine_protocol: ProtocolV2):
         """Test Protocol.from_json dispatches a state machine bloom to the state machine loader."""
         state_machine_protocol._prep_protocol()
         protocol_json: dict[str, object] = state_machine_protocol.get_protocol_file(valid=True).to_json()
         assert protocol_json["model_type"] == "state_machine"
 
-        loaded_protocol: ProtocolV1 = ProtocolV1.from_json(protocol_json)
+        loaded_protocol: ProtocolV2 = ProtocolV2.from_json(protocol_json)
 
         assert loaded_protocol.get_model_type().value == "state_machine"
         assert loaded_protocol.state_machine is True
@@ -1254,7 +1254,7 @@ class TestProtocol:
 
     def test_protocol_from_json_multi_classifier_round_trip(self):
         """Test Protocol.from_json rebuilds an equivalent multi classifier protocol."""
-        protocol: ProtocolV1 = ProtocolV1("multi_classifier_round_trip", inputs=1, encrypt=False)
+        protocol: ProtocolV2 = ProtocolV2("multi_classifier_round_trip", inputs=1, encrypt=False)
         for i in range(10):
             protocol.add_context(f"Multi classifier context line {i + 1}")
 
@@ -1276,7 +1276,7 @@ class TestProtocol:
         protocol_json: dict[str, object] = protocol.get_protocol_file(valid=True).to_json()
         assert protocol_json["model_type"] == "multi_classifier"
 
-        loaded_protocol: ProtocolV1 = ProtocolV1.from_json(protocol_json)
+        loaded_protocol: ProtocolV2 = ProtocolV2.from_json(protocol_json)
 
         assert loaded_protocol.get_model_type().value == "multi_classifier"
         loaded_instruction = next(iter(loaded_protocol.instructions))

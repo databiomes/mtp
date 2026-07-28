@@ -8,10 +8,10 @@ from model_train_protocol.common.instructions.BaseInstruction import Sample
 from model_train_protocol.common.instructions.MultiClassifierInstruction import MultiClassifierInstruction
 from model_train_protocol.common.tokens import TokenSet
 from model_train_protocol.errors import MultiClassifierError
-from model_train_protocol.v1.protocol.loaders.bloom_utils import BloomUtils
+from model_train_protocol.v2.protocol.loaders.bloom_utils import BloomUtils
 
 if TYPE_CHECKING:
-    from model_train_protocol.v1.protocol.protocol_v1 import ProtocolV1
+    from model_train_protocol.v2.protocol.protocol_v2 import ProtocolV2
 
 
 def _build_state_map(samples: List[Sample]) -> Dict[str, List[str]]:
@@ -38,8 +38,8 @@ def _build_state_map(samples: List[Sample]) -> Dict[str, List[str]]:
     return {key: sorted(state_sets[key]) for key in key_order}
 
 
-def load_multi_classifier_protocol(protocol_file: dict, protocol: "ProtocolV1",
-                                   tokens: Dict[str, Token]) -> "ProtocolV1":
+def load_multi_classifier_protocol(protocol_file: dict, protocol: "ProtocolV2",
+                                   tokens: Dict[str, Token]) -> "ProtocolV2":
     """Loads a multi classifier protocol from its bloom (model.json) representation."""
     # Add tokens
     BloomUtils.add_tokens(protocol_file=protocol_file, protocol=protocol, tokens=tokens)
