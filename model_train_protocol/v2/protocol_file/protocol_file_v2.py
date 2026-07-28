@@ -5,15 +5,16 @@ from packaging.version import Version
 
 from model_train_protocol import Token, NumToken
 from model_train_protocol.common.instructions import BaseInstruction
-from model_train_protocol.v1.structures.protocol import Instruction, TokenInfo, Sample, \
+from model_train_protocol_schemas.structures.protocol import Instruction, TokenInfo, Sample, \
     InstructionSet, Guardrail
-from model_train_protocol.v1.structures.protocol import Protocol
+from model_train_protocol_schemas.structures.protocol import Protocol
 from model_train_protocol_schemas.utils import get_bloom_schema_url
+from model_train_protocol.common.constants import ModelType
 from model_train_protocol.common.tokens import SpecialToken
 from model_train_protocol.errors import ProtocolFileLayerDepthError
 
 
-class ProtocolFileV1:
+class ProtocolFileV2:
     """Manages the model.json file for model training protocols."""
 
     @dataclass
@@ -42,7 +43,8 @@ class ProtocolFileV1:
         judge: List = field(default_factory=list)
         ppo: List = field(default_factory=list)
 
-    def __init__(self, name: str, context: List[str], inputs: int, encrypted: bool, valid: bool, state_machine: bool,
+    def __init__(self, name: str, context: List[str], inputs: int, encrypted: bool, valid: bool,
+                 model_type: ModelType,
                  tokens: Collection[Token], special_tokens: Collection[Token],
                  instructions: Collection[BaseInstruction], bloom_version: Version):
         """Initializes the Template with a name and context."""
@@ -52,14 +54,14 @@ class ProtocolFileV1:
         self.context: List[str] = context
         self.encrypted: bool = encrypted
         self.valid: bool = valid
-        self.state_machine: bool = state_machine
+        self.model_type: ModelType = model_type
         self.tokens: Dict[str, dict] = {}
         self.special_token_keys: Set[str] = set()
         self.instruction_token_keys: Set[str] = set()
-        self.instruction: ProtocolFileV1.ProtocolInstruction = ProtocolFileV1.ProtocolInstruction(
+        self.instruction: ProtocolFileV2.ProtocolInstruction = ProtocolFileV2.ProtocolInstruction(
             inputs=inputs)
         self.numbers: Dict[str, str] = {}
-        self.batches: ProtocolFileV1.Batches = ProtocolFileV1.Batches()
+        self.batches: ProtocolFileV2.Batches = ProtocolFileV2.Batches()
 
         # Add regular tokens
         self.add_tokens(tokens)
@@ -88,7 +90,7 @@ class ProtocolFileV1:
     def add_instructions(self, instructions: Collection[BaseInstruction]):
         """Adds instructions to the template."""
         for instruction in instructions:
-            instruction_set: ProtocolFileV1.ProtocolInstructionSet = ProtocolFileV1.ProtocolInstructionSet(
+            instruction_set: ProtocolFileV2.ProtocolInstructionSet = ProtocolFileV2.ProtocolInstructionSet(
                 name=instruction.name,
                 guardrails=instruction.serialize_guardrails(),
                 context=instruction.context,
@@ -232,7 +234,7 @@ class ProtocolFileV1:
         protocol = Protocol(
             name=self.name,
             context=self.context,
-            state_machine=self.state_machine,
+            model_type=self.model_type.value,
             inputs=self.inputs,
             encrypted=self.encrypted,
             valid=self.valid,

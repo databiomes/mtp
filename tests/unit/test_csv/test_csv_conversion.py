@@ -7,7 +7,7 @@ from model_train_protocol.common.instructions import BaseInstruction
 from model_train_protocol.csv.conversion import CSVConversion, CSVLine
 from model_train_protocol.errors.conversion import ConversionError
 from model_train_protocol.errors.protocol import ProtocolError
-from model_train_protocol.v1 import ProtocolV1
+from model_train_protocol.v2 import ProtocolV2
 from tests.fixtures.csv_fixtures import *
 
 
@@ -86,7 +86,7 @@ class TestCSVConversion:
         
         # Test full conversion works with processed data
         protocol = conversion.to_mtp()
-        assert isinstance(protocol, ProtocolV1)
+        assert isinstance(protocol, ProtocolV2)
 
     def test_format_lines_basic(self, valid_csv_data):
         """Test basic line formatting."""
@@ -100,7 +100,7 @@ class TestCSVConversion:
         
         # Test full conversion works with formatted lines
         protocol = conversion.to_mtp()
-        assert isinstance(protocol, ProtocolV1)
+        assert isinstance(protocol, ProtocolV2)
 
     def test_format_line_empty_output_inherits_previous(self, csv_with_empty_outputs):
         """Test that empty outputs inherit from previous line."""
@@ -114,7 +114,7 @@ class TestCSVConversion:
         
         # Test full conversion works with inherited outputs
         protocol = conversion.to_mtp()
-        assert isinstance(protocol, ProtocolV1)
+        assert isinstance(protocol, ProtocolV2)
 
     def test_format_line_nan_output_inherits_previous(self, csv_with_nan_outputs):
         """Test that NaN outputs inherit from previous line."""
@@ -127,7 +127,7 @@ class TestCSVConversion:
         
         # Test full conversion works with NaN output inheritance
         protocol = conversion.to_mtp()
-        assert isinstance(protocol, ProtocolV1)
+        assert isinstance(protocol, ProtocolV2)
 
     def test_format_line_first_row_empty_output_raises_error(self, csv_empty_output_first_row):
         """Test that empty output in first row raises ConversionError."""
@@ -147,7 +147,7 @@ class TestCSVConversion:
         
         # Test full conversion works with guardrail exclusion
         protocol = conversion.to_mtp()
-        assert isinstance(protocol, ProtocolV1)
+        assert isinstance(protocol, ProtocolV2)
 
     def test_get_unique_states_handles_empty_and_nan(self, csv_with_context_variations):
         """Test that unique states excludes empty and NaN values."""
@@ -159,14 +159,14 @@ class TestCSVConversion:
         
         # Test full conversion works with context variations
         protocol = conversion.to_mtp()
-        assert isinstance(protocol, ProtocolV1)
+        assert isinstance(protocol, ProtocolV2)
 
     def test_to_mtp_basic_conversion(self, valid_csv_data):
         """Test basic CSV to MTP conversion."""
         conversion = CSVConversion(valid_csv_data, "Test Protocol")
         protocol = conversion.to_mtp()
         
-        assert isinstance(protocol, ProtocolV1)
+        assert isinstance(protocol, ProtocolV2)
         assert protocol.name == "Test Protocol"
         assert len(protocol.instructions) == 1
         
@@ -252,7 +252,7 @@ class TestCSVConversion:
         conversion = CSVConversion(large_valid_csv)
         protocol = conversion.to_mtp()
         
-        assert isinstance(protocol, ProtocolV1)
+        assert isinstance(protocol, ProtocolV2)
         assert len(conversion.ordered_lines) == 100
         
         instruction = list(protocol.instructions)[0]

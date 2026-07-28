@@ -1,0 +1,44 @@
+{
+    "$schema": "https://mtp.schemas.databiomes.com/v2/template_2_0_0.json",
+    "encrypt": false,
+    "model_type": "state_machine",
+    "inputs": 1,
+    "tokens": {
+        "input": {
+            "State_": "State_",
+            "Tree_English_Alice_Talk_": "Tree_English_Alice_Talk_"
+        },
+        "output": {
+            "<NON>": "<NON>",
+            "<NON>_<UNK>_": "<NON>_<UNK>_"
+        }
+    },
+    "instructions": {
+        "StateMachineInstruction": {
+            "type": "state_machine",
+            "input": [
+                "<BOS>\n",
+                "Tree_English_Alice_Talk_\n<string>\n",
+                "State_\n",
+                "<RUN>"
+            ],
+            "output": [
+                "<string>\n<NON>_<UNK>_\n<EOS>",
+                "<string>\n<NON>\n<EOS>"
+            ]
+        }
+    },
+    "states": [
+        "FAREWELL",
+        "DIRECTION",
+        "IDENTITY",
+        "LOCATION",
+        "MADNESS",
+        "GUARDRAIL"
+    ],
+    "example_usage": {
+        "instruction_input": "<BOS>\nTree_English_Alice_Talk_\nWhich way ought I to go from here?\nState_\n<RUN>\n",
+        "valid_model_output": "DIRECTION\n<NON>\n<EOS>",
+        "guardrail_model_output": "GUARDRAIL\n<NON>_<UNK>_\n<EOS>"
+    }
+}

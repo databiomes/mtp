@@ -1,0 +1,362 @@
+{
+    "$schema": "https://mtp.schemas.databiomes.com/v2/bloom_2_0_0.json",
+    "name": "state_machine_example",
+    "inputs": 1,
+    "model_type": "state_machine",
+    "encrypted": false,
+    "valid": true,
+    "context": [
+        "Alice was tired of sitting by her sister with nothing to do, and she began to wonder what she could do to pass the time.",
+        "The hot day made her sleepy, when suddenly a white rabbit with pink eyes ran past her, muttering about being late.",
+        "Burning with curiosity, Alice chased the rabbit down a rabbit-hole and fell for a very long time before landing softly.",
+        "She found herself in a long, low hall, wandering through a strange world where nothing behaved quite as it should.",
+        "In a tree, surrounded by a dense fog, the Cheshire Cat watches Alice and listens closely to everything she says.",
+        "The Cat does not reply with words. Instead, it sorts each thing Alice says into the kind of question she is asking.",
+        "Alice asks about directions, about who the Cat is, about madness, and about where she has ended up.",
+        "Sometimes she is not asking a question at all, and simply says goodbye before wandering off again.",
+        "Each line Alice speaks is routed to exactly one state, and never to more than one.",
+        "The states are used by Wonderland to decide which part of the story should respond to Alice next."
+    ],
+    "tokens": {
+        "<BOS>": {
+            "desc": null,
+            "key": "<BOS>",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": "start",
+            "type": "SpecialToken"
+        },
+        "<EOS>": {
+            "desc": null,
+            "key": "<EOS>",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": "end",
+            "type": "SpecialFinalToken"
+        },
+        "<NON>": {
+            "desc": null,
+            "key": "<NON>",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": "none",
+            "type": "SpecialFinalToken"
+        },
+        "<PAD>": {
+            "desc": null,
+            "key": "<PAD>",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": "pad",
+            "type": "SpecialToken"
+        },
+        "<RUN>": {
+            "desc": null,
+            "key": "<RUN>",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": "infer",
+            "type": "SpecialToken"
+        },
+        "<UNK>": {
+            "desc": null,
+            "key": "<UNK>",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": "unknown",
+            "type": "SpecialToken"
+        },
+        "Alice_": {
+            "desc": null,
+            "key": "Alice_",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": null,
+            "type": "Token"
+        },
+        "English_": {
+            "desc": null,
+            "key": "English_",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": null,
+            "type": "Token"
+        },
+        "State_": {
+            "desc": "The responses that are acceptable: ['DIRECTION', 'IDENTITY', 'MADNESS', 'LOCATION', 'FAREWELL'].",
+            "key": "State_",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": null,
+            "type": "Token"
+        },
+        "Talk_": {
+            "desc": null,
+            "key": "Talk_",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": null,
+            "type": "Token"
+        },
+        "Tree_": {
+            "desc": "Perched in a tree, surrounded by a dense fog where nothing can be seen past a few feet, the Cheshire Cat sits smiling on a branch.",
+            "key": "Tree_",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": null,
+            "type": "Token"
+        }
+    },
+    "special_tokens": [
+        "<BOS>",
+        "<EOS>",
+        "<NON>",
+        "<PAD>",
+        "<RUN>",
+        "<UNK>",
+        "State_",
+        "Tree_English_Alice_Talk_"
+    ],
+    "instruction": {
+        "memory": 2,
+        "sets": [
+            {
+                "context": [
+                    "The Cheshire Cat routes each line Alice speaks to the kind of question it represents.",
+                    "Every response is exactly one of the defined states."
+                ],
+                "guardrails": [
+                    {
+                        "bad_examples": [
+                            "explain quantum mechanics.",
+                            "who will win the next american election?",
+                            "what is the capital of Spain?"
+                        ],
+                        "bad_output": "GUARDRAIL",
+                        "bad_prompt": "A prompt that is irrelevant and off topic with 1-20 words",
+                        "good_prompt": "A question or remark Alice speaks aloud in Wonderland with 1-20 words",
+                        "index": 0
+                    }
+                ],
+                "name": "StateMachineInstruction",
+                "ppo": [],
+                "samples": [
+                    {
+                        "number_lists": [
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "<NON>",
+                        "strings": [
+                            "Which way ought I to go from here?",
+                            "DIRECTION"
+                        ],
+                        "value": null
+                    },
+                    {
+                        "number_lists": [
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "<NON>",
+                        "strings": [
+                            "Can you tell me which road leads out of this wood?",
+                            "DIRECTION"
+                        ],
+                        "value": null
+                    },
+                    {
+                        "number_lists": [
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "<NON>",
+                        "strings": [
+                            "Please, would you tell me what sort of creature you are?",
+                            "IDENTITY"
+                        ],
+                        "value": null
+                    },
+                    {
+                        "number_lists": [
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "<NON>",
+                        "strings": [
+                            "Are you a cat, or something else entirely?",
+                            "IDENTITY"
+                        ],
+                        "value": null
+                    },
+                    {
+                        "number_lists": [
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "<NON>",
+                        "strings": [
+                            "Are you quite certain that everyone here is mad?",
+                            "MADNESS"
+                        ],
+                        "value": null
+                    },
+                    {
+                        "number_lists": [
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "<NON>",
+                        "strings": [
+                            "How do you know that I am mad as well?",
+                            "MADNESS"
+                        ],
+                        "value": null
+                    },
+                    {
+                        "number_lists": [
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "<NON>",
+                        "strings": [
+                            "Where in the world have I landed?",
+                            "LOCATION"
+                        ],
+                        "value": null
+                    },
+                    {
+                        "number_lists": [
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "<NON>",
+                        "strings": [
+                            "What is this strange place called?",
+                            "LOCATION"
+                        ],
+                        "value": null
+                    },
+                    {
+                        "number_lists": [
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "<NON>",
+                        "strings": [
+                            "Goodbye then, I shall find the way myself.",
+                            "FAREWELL"
+                        ],
+                        "value": null
+                    },
+                    {
+                        "number_lists": [
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "<NON>",
+                        "strings": [
+                            "I must be going now, thank you all the same.",
+                            "FAREWELL"
+                        ],
+                        "value": null
+                    }
+                ],
+                "set": [
+                    [
+                        "Tree_",
+                        "English_",
+                        "Alice_",
+                        "Talk_"
+                    ],
+                    [
+                        "State_"
+                    ]
+                ]
+            }
+        ]
+    }
+}
