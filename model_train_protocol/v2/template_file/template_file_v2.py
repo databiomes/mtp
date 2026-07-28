@@ -3,20 +3,17 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Union, List
 
-from model_train_protocol import Instruction, ExtendedInstruction, StateMachineInstruction
-from model_train_protocol.common.constants import BOS_TOKEN, RUN_TOKEN, EOS_TOKEN, UNK_TOKEN, NON_TOKEN
+from model_train_protocol import Instruction, ExtendedInstruction, StateMachineInstruction, MultiClassifierInstruction
+from model_train_protocol.common.constants import BOS_TOKEN, RUN_TOKEN, EOS_TOKEN, UNK_TOKEN, NON_TOKEN, ModelType
 from model_train_protocol.common.instructions import BaseInstruction
 from model_train_protocol.common.instructions.BaseInstruction import Sample
-from model_train_protocol.v1.structures.template import (
+from model_train_protocol_schemas.structures.template import (
     Template as TemplateModel,
     Tokens as TokensModel,
     InstructionDefinition,
     ExampleUsage,
 )
 from model_train_protocol_schemas.utils import get_template_schema_url
-from packaging.version import Version
-
-from model_train_protocol.v1.template_file.template_version import TEMPLATE_VERSION
 
 from model_train_protocol.common.tokens import FinalToken
 from model_train_protocol.common.tokens import NumToken, NumListToken
@@ -29,6 +26,7 @@ class InstructionTypeEnum(Enum):
     BASIC = "basic"
     EXTENDED = "extended"
     STATE_MACHINE = "state_machine"
+    MULTI_CLASSIFICATION_MACHINE = "multi_classification_machine"
 
     @classmethod
     def get_instruction_type_by_class(cls, instruction: BaseInstruction) -> 'InstructionTypeEnum':
@@ -39,11 +37,13 @@ class InstructionTypeEnum(Enum):
             return cls.EXTENDED
         elif isinstance(instruction, StateMachineInstruction):
             return cls.STATE_MACHINE
+        elif isinstance(instruction, MultiClassifierInstruction):
+            return cls.MULTI_CLASSIFICATION_MACHINE
         else:
             raise TemplateFileError("Unknown instruction type.")
 
 
-class TemplateFileV1:
+class TemplateFileV2:
     """Manages the model.json file for model training protocols."""
 
     @dataclass
@@ -162,15 +162,15 @@ class TemplateFileV1:
             return instructions_dict
 
     def __init__(self, inputs: int, instructions: list[BaseInstruction], encrypt: bool, has_guardrails: bool,
-                 state_machine: bool):
+                 model_type: ModelType):
         """Initializes the template"""
 
-        self.tokens: TemplateFileV1.Tokens = TemplateFileV1.Tokens()
-        self.instructions: TemplateFileV1.Instructions = TemplateFileV1.Instructions()
+        self.tokens: TemplateFileV2.Tokens = TemplateFileV2.Tokens()
+        self.instructions: TemplateFileV2.Instructions = TemplateFileV2.Instructions()
         self.inputs: int = inputs
         self.instructions_list: list[BaseInstruction] = instructions
         self.encrypt: bool = encrypt
-        self.state_machine: bool = state_machine
+        self.model_type: ModelType = model_type
         self.has_guardrails: bool = has_guardrails
         self._add_io_from_instructions()
 
@@ -349,7 +349,7 @@ class TemplateFileV1:
         example_usage: ExampleUsage = ExampleUsage(**example_usage_dict)
 
         states: List[str] = []
-        if self.state_machine:
+        if self.model_type == ModelType.STATE_MACHINE:
             state_machine_instruction: BaseInstruction = self.instructions_list[0]
             if not isinstance(state_machine_instruction, StateMachineInstruction):
                 raise TemplateFileError(
@@ -358,7 +358,7 @@ class TemplateFileV1:
 
         template: TemplateModel = TemplateModel(
             encrypt=self.encrypt,
-            state_machine=self.state_machine,
+            model_type=self.model_type.value,
             states=states,
             inputs=self.inputs,
             tokens=tokens,
@@ -367,16 +367,12 @@ class TemplateFileV1:
         )
 
         # Hotfix: if state machine, replace the <NON> output token with <NON>_<UNK>_
-        if self.has_guardrails and self.state_machine:
+        if self.has_guardrails and self.model_type == ModelType.STATE_MACHINE:
             non_unk_combined: str = NON_TOKEN.key + "_" + UNK_TOKEN.key + "_"
             template.tokens.output[non_unk_combined] = non_unk_combined
             del template.tokens.output[UNK_TOKEN.key]
 
         json_dict: dict[str, object] = template.model_dump()
-        # Pass V1's own version explicitly; the no-argument form returns the latest template
-        # version, which is not the one this class emits.
-        final_json: dict[str, object] = {
-            "$schema": get_template_schema_url(version=Version(TEMPLATE_VERSION))
-        }
+        final_json: dict[str, object] = {"$schema": get_template_schema_url()}
         final_json.update(json_dict)
         return final_json
