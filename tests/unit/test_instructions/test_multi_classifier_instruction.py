@@ -12,7 +12,11 @@ import json
 import pytest
 
 from model_train_protocol.common.instructions.MultiClassifierInstruction import MultiClassifierInstruction
-from model_train_protocol.common.instructions.output.MultiClassifierOutput import MultiClassifierOutput
+from model_train_protocol.common.instructions.output.MultiClassifierOutput import (
+    MultiClassifierOutput,
+    format_multi_classifier_output,
+    parse_multi_classifier_output,
+)
 from model_train_protocol.common.instructions.input.InstructionInput import InstructionInput
 from model_train_protocol.errors import MultiClassifierError
 from tests.fixtures.tokens import SIMPLE_TOKENSET, USER_TOKENSET
@@ -198,3 +202,135 @@ class TestMultiClassifierJSONValidation:
                 input_snippets=[input_snippet],
                 output_snippet=output_snippet,
             )
+
+
+class TestMultiClassifierOutputParsing:
+    """Test cases for the accepted input formats of a MultiClassifier output string."""
+
+    @pytest.mark.parametrize("output_string", [
+        '{"sentiment": "positive", "topic": "sports"}',  # strict JSON, as produced by json.dumps
+        "{'sentiment': 'positive', 'topic': 'sports'}",  # canonical single-quoted form stored in the bloom file
+        '{"sentiment": \'positive\', "topic": \'sports\'}',  # mixed quoting
+        '{ "sentiment" : "positive" ,\n  "topic" : "sports" }',  # extra whitespace and newlines
+    ])
+    def test_accepted_formats_parse_to_same_dict(self, output_string):
+        """Test that each accepted output format parses to the same dictionary."""
+        assert parse_multi_classifier_output(output_string) == {"sentiment": "positive", "topic": "sports"}
+
+    @pytest.mark.parametrize("output_string", [
+        '{"sentiment": "it\'s positive"}',  # single quote inside a value
+        '{"sentiment": "say \\"positive\\""}',  # escaped double quotes inside a value
+        '{"sentiment": "both \' and \\" quotes"}',  # both quote characters inside a value
+        '{"sentiment": "back\\\\slash"}',  # backslash inside a value
+        "{'sentiment': \"it's positive\"}",  # canonical rendering of a value containing a single quote
+    ])
+    def test_nested_quotes_survive_round_trip(self, output_string):
+        """Test that values containing quote characters survive parse -> format -> parse."""
+        parsed = parse_multi_classifier_output(output_string)
+
+        assert parse_multi_classifier_output(format_multi_classifier_output(parsed)) == parsed
+
+    def test_format_uses_canonical_single_quoted_form(self):
+        """Test that formatting produces the documented single-quoted form."""
+        formatted = format_multi_classifier_output({"emotion": "confused", "intent": "question"})
+
+        assert formatted == "{'emotion': 'confused', 'intent': 'question'}"
+
+    def test_format_is_idempotent(self):
+        """Test that re-formatting an already canonical string does not change it."""
+        canonical = "{'sentiment': 'positive', 'topic': 'sports'}"
+
+        assert format_multi_classifier_output(parse_multi_classifier_output(canonical)) == canonical
+
+    def test_format_preserves_key_order(self):
+        """Test that formatting preserves the key order of the parsed output."""
+        parsed = parse_multi_classifier_output('{"topic": "sports", "sentiment": "positive"}')
+
+        assert format_multi_classifier_output(parsed) == "{'topic': 'sports', 'sentiment': 'positive'}"
+
+    @pytest.mark.parametrize("output_string", [
+        '["positive", "sports"]',  # a list, not an object
+        '"positive"',  # a bare string
+        "42",  # a bare number
+        "null",  # JSON null
+    ])
+    def test_non_object_output_raises_error(self, output_string):
+        """Test that an output string that is not a key-value object raises an error."""
+        with pytest.raises(MultiClassifierError, match="mapping keys to values"):
+            parse_multi_classifier_output(output_string)
+
+    @pytest.mark.parametrize("output_string", [
+        "{sentiment: positive, topic: sports",  # unbalanced and unquoted
+        "positive and sports",  # plain text
+        "",  # empty string
+    ])
+    def test_unparseable_output_raises_error(self, output_string):
+        """Test that an output string that is neither JSON nor a dict literal raises an error."""
+        with pytest.raises(MultiClassifierError, match="valid JSON"):
+            parse_multi_classifier_output(output_string)
+
+    def test_non_string_keys_raise_error(self):
+        """Test that a dict literal with non-string keys raises an error."""
+        with pytest.raises(MultiClassifierError, match="keys must be strings"):
+            parse_multi_classifier_output("{1: 'positive'}")
+
+
+class TestMultiClassifierSampleNormalization:
+    """Test cases for how add_sample normalizes the stored output format."""
+
+    @staticmethod
+    def _add(instruction, output_string, input_string="The cat sits in the tree"):
+        """Adds a single sample and returns its stored output string."""
+        instruction.add_sample(
+            input_snippets=[SIMPLE_TOKENSET.create_snippet(input_string)],
+            output_snippet=instruction.output.tokenset.create_snippet(output_string),
+        )
+        return instruction.samples[-1].output
+
+    @pytest.mark.parametrize("output_string", [
+        '{"sentiment": "positive", "topic": "sports"}',
+        "{'sentiment': 'positive', 'topic': 'sports'}",
+        '{ "sentiment": "positive",  "topic": "sports" }',
+        '{"sentiment": \'positive\', "topic": "sports"}',
+    ])
+    def test_stored_output_is_canonical(self, output_string):
+        """Test that every accepted input format is stored in the canonical single-quoted form."""
+        instruction = _make_instruction()
+
+        assert self._add(instruction, output_string) == "{'sentiment': 'positive', 'topic': 'sports'}"
+
+    def test_plain_string_output_snippet_is_canonical(self):
+        """Test that passing the output as a plain string (not a Snippet) is normalized the same way."""
+        instruction = _make_instruction()
+
+        instruction.add_sample(
+            input_snippets=["The cat sits in the tree"],
+            output_snippet=json.dumps({"sentiment": "positive", "topic": "sports"}),
+        )
+
+        assert instruction.samples[0].output == "{'sentiment': 'positive', 'topic': 'sports'}"
+
+    def test_value_with_single_quote_is_not_mangled(self):
+        """Test that a value containing an apostrophe is escaped rather than corrupted."""
+        instruction = _make_instruction(state_map={"sentiment": ["it's positive"], "topic": ["sports"]})
+
+        stored = self._add(instruction, json.dumps({"sentiment": "it's positive", "topic": "sports"}))
+
+        assert parse_multi_classifier_output(stored) == {"sentiment": "it's positive", "topic": "sports"}
+
+    def test_value_with_double_quote_is_not_mangled(self):
+        """Test that a value containing a double quote is escaped rather than corrupted."""
+        instruction = _make_instruction(state_map={"sentiment": ['say "positive"'], "topic": ["sports"]})
+
+        stored = self._add(instruction, json.dumps({"sentiment": 'say "positive"', "topic": "sports"}))
+
+        assert parse_multi_classifier_output(stored) == {"sentiment": 'say "positive"', "topic": "sports"}
+
+    def test_stored_output_is_reparseable_as_a_new_sample(self):
+        """Test that a stored output can be fed back into add_sample, as the protocol loader does."""
+        instruction = _make_instruction()
+        stored = self._add(instruction, json.dumps({"sentiment": "positive", "topic": "sports"}))
+
+        reloaded = _make_instruction()
+
+        assert self._add(reloaded, stored) == stored

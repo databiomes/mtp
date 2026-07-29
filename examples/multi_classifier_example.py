@@ -89,7 +89,7 @@ alice_line_classifier.add_sample(
 # 2nd Sample
 alice_line_classifier.add_sample(
     input_snippets=["Which way ought I to go from here?"],
-    output_snippet=json.dumps({"emotion": "confused", "intent": "question"}),
+    output_snippet='{"emotion": "confused", "intent": "question"}',
 )
 
 # 3rd Sample

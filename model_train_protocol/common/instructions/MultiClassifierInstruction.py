@@ -2,7 +2,11 @@ from typing import Dict
 from typing import List, Union
 
 from model_train_protocol import Token
-from model_train_protocol.common.instructions.output.MultiClassifierOutput import MultiClassifierOutput
+from model_train_protocol.common.instructions.output.MultiClassifierOutput import (
+    MultiClassifierOutput,
+    format_multi_classifier_output,
+    parse_multi_classifier_output,
+)
 from model_train_protocol.errors import InstructionTypeError
 from .BaseInstruction import BaseInstruction, Sample
 from .input.InstructionInput import InstructionInput
@@ -60,6 +64,11 @@ class MultiClassifierInstruction(BaseInstruction):
         self._assert_input_snippet_count(inputs=input_snippets)
         self._validate_snippets_match(inputs=input_snippets, response_snippet=output_snippet)
         self._validate_snippet_length(inputs=input_snippets, response_snippet=output_snippet)
+
+        # Guarantee that output snippet format contains outside double quotes and inner single quotes for each key and
+        # value. Re-rendering the parsed object (instead of a blind quote swap) keeps quotes that appear *inside* a key
+        # or value escaped, so the snippet stays parseable when the protocol is loaded back from its bloom file.
+        output_snippet.string = format_multi_classifier_output(parse_multi_classifier_output(output_snippet.string))
 
         sample: Sample = self._create_sample(inputs=input_snippets, response_snippet=output_snippet,
                                              value=output_value, final=final)

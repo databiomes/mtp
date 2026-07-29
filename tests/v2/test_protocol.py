@@ -11,6 +11,7 @@ from model_train_protocol import Token, TokenSet, Instruction, ExtendedInstructi
 from model_train_protocol.common.instructions.input.InstructionInput import InstructionInput
 from model_train_protocol.common.instructions.output.InstructionOutput import InstructionOutput
 from model_train_protocol.common.instructions.output.ExtendedResponse import ExtendedResponse
+from model_train_protocol.common.instructions.output.MultiClassifierOutput import parse_multi_classifier_output
 from model_train_protocol.v2 import ProtocolV2
 from tests.fixtures.tokens import get_valid_keyless_tokens
 
@@ -1282,4 +1283,39 @@ class TestProtocol:
         loaded_instruction = next(iter(loaded_protocol.instructions))
         assert isinstance(loaded_instruction, MultiClassifierInstruction)
         assert loaded_instruction.output.required_keys == list(state_map.keys())
+        assert loaded_protocol.get_protocol_file(valid=True).to_json() == protocol_json
+
+    def test_protocol_from_json_multi_classifier_nested_quotes_round_trip(self):
+        """Test Protocol.from_json round trips multi classifier values that contain quote characters."""
+        protocol: ProtocolV2 = ProtocolV2("multi_classifier_quotes", inputs=1, encrypt=False)
+        for i in range(10):
+            protocol.add_context(f"Multi classifier context line {i + 1}")
+
+        # Values deliberately contain apostrophes and double quotes, which a naive quote swap would corrupt.
+        pairs = [("it's curious", "question"), ('say "afraid"', "statement"), ("plain", 'both \' and " quotes')]
+        state_map = {
+            "emotion": sorted({emotion for emotion, _ in pairs}),
+            "intent": sorted({intent for _, intent in pairs}),
+        }
+        instruction_input = InstructionInput(tokensets=[TokenSet(tokens=[Token("Line")])])
+        instruction = MultiClassifierInstruction(input=instruction_input, state_map=state_map)
+        instruction.add_context("Classify each line by emotion and intent.")
+        for index, (emotion, intent) in enumerate(pairs):
+            instruction.add_sample(
+                input_snippets=[f"Line number {index + 1} to classify."],
+                output_snippet=json.dumps({"emotion": emotion, "intent": intent}),
+            )
+        protocol.add_instruction(instruction)
+
+        protocol._prep_protocol()
+        protocol_json: dict[str, object] = protocol.get_protocol_file(valid=True).to_json()
+
+        loaded_protocol: ProtocolV2 = ProtocolV2.from_json(protocol_json)
+        loaded_instruction = next(iter(loaded_protocol.instructions))
+
+        assert isinstance(loaded_instruction, MultiClassifierInstruction)
+        assert loaded_instruction.output.required_keys == ["emotion", "intent"]
+        assert [parse_multi_classifier_output(sample.output) for sample in loaded_instruction.samples] == [
+            {"emotion": emotion, "intent": intent} for emotion, intent in pairs
+        ]
         assert loaded_protocol.get_protocol_file(valid=True).to_json() == protocol_json
