@@ -163,7 +163,7 @@
                         "result": "<NON>",
                         "strings": [
                             "What a curious feeling, I must be shutting up like a telescope!",
-                            "{\"emotion\": \"curious\", \"intent\": \"exclamation\"}"
+                            "{'emotion': 'curious', 'intent': 'exclamation'}"
                         ],
                         "value": null
                     },
@@ -180,7 +180,7 @@
                         "result": "<NON>",
                         "strings": [
                             "Which way ought I to go from here?",
-                            "{\"emotion\": \"confused\", \"intent\": \"question\"}"
+                            "{'emotion': 'confused', 'intent': 'question'}"
                         ],
                         "value": null
                     },
@@ -197,7 +197,7 @@
                         "result": "<NON>",
                         "strings": [
                             "Oh dear, I do hope this fall will ever come to an end.",
-                            "{\"emotion\": \"afraid\", \"intent\": \"statement\"}"
+                            "{'emotion': 'afraid', 'intent': 'statement'}"
                         ],
                         "value": null
                     },
@@ -214,7 +214,7 @@
                         "result": "<NON>",
                         "strings": [
                             "How funny it seems to talk to a cat that keeps vanishing!",
-                            "{\"emotion\": \"amused\", \"intent\": \"exclamation\"}"
+                            "{'emotion': 'amused', 'intent': 'exclamation'}"
                         ],
                         "value": null
                     },
@@ -231,7 +231,7 @@
                         "result": "<NON>",
                         "strings": [
                             "Are you quite certain that everyone here is mad?",
-                            "{\"emotion\": \"curious\", \"intent\": \"question\"}"
+                            "{'emotion': 'curious', 'intent': 'question'}"
                         ],
                         "value": null
                     }

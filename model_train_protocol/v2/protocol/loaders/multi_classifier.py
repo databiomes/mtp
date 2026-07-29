@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING, Dict, List
 
 from model_train_protocol import Token, FinalToken, InstructionInput, Snippet
 from model_train_protocol.common.instructions.BaseInstruction import Sample
 from model_train_protocol.common.instructions.MultiClassifierInstruction import MultiClassifierInstruction
+from model_train_protocol.common.instructions.output.MultiClassifierOutput import parse_multi_classifier_output
 from model_train_protocol.common.tokens import TokenSet
-from model_train_protocol.errors import MultiClassifierError
 from model_train_protocol.v2.protocol.loaders.bloom_utils import BloomUtils
 
 if TYPE_CHECKING:
@@ -25,11 +24,7 @@ def _build_state_map(samples: List[Sample]) -> Dict[str, List[str]]:
     state_sets: Dict[str, set] = {}
     key_order: List[str] = []
     for sample in samples:
-        try:
-            output_dict: Dict[str, str] = json.loads(sample.output)
-        except json.JSONDecodeError:
-            raise MultiClassifierError(
-                f"MultiClassifier sample output must be valid JSON. Got: {sample.output}")
+        output_dict: Dict[str, str] = parse_multi_classifier_output(sample.output)
         for key, value in output_dict.items():
             if key not in state_sets:
                 state_sets[key] = set()
