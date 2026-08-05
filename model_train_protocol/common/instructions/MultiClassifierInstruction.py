@@ -43,7 +43,17 @@ class MultiClassifierInstruction(BaseInstruction):
         super().__init__(input=input, output=instruction_output, context=context, name="MultiClassifierInstruction")
         if not isinstance(self.output, MultiClassifierOutput):
             raise InstructionTypeError(f"Output must be an instance of MultiClassifierOutput. Got: {type(self.output)}")
+        self.state_map: Dict[str, List[str]] = {key: list(values) for key, values in state_map.items()}
         self._validate_input_snippets()
+
+    def get_states(self) -> Dict[str, List[str]]:
+        """
+        Returns the classification labels mapped to the values that are acceptable for each of them.
+
+        Unlike a StateMachineInstruction, which answers with a single state out of a flat list, a MultiClassifier
+        answers with one value per label, so its states are a mapping rather than a list.
+        """
+        return {key: list(values) for key, values in self.state_map.items()}
 
     # noinspection PyMethodOverriding
     def add_sample(self, input_snippets: List[Union[str | Snippet]], output_snippet: Snippet | str,
