@@ -28,8 +28,8 @@
     },
     "states": [],
     "example_usage": {
-        "instruction_input": "",
-        "valid_model_output": "",
+        "instruction_input": "<BOS>\nTree_English_Alice_Talk_\nWhat a curious feeling, I must be shutting up like a telescope!\nStates_\n<RUN>\n",
+        "valid_model_output": "{'emotion': 'curious', 'intent': 'exclamation'}\n<NON>\n<EOS>",
         "guardrail_model_output": ""
     }
 }
