@@ -255,7 +255,7 @@ class TemplateFileV2:
                             extended_instruction = instr
                     else:
                         extended_instruction = instr
-            elif isinstance(instr, StateMachineInstruction) and instr.samples:
+            elif isinstance(instr, (StateMachineInstruction, MultiClassifierInstruction)) and instr.samples:
                 if basic_instruction is None:
                     basic_instruction = instr
 
