@@ -6,8 +6,6 @@ only recognise Instruction, ExtendedInstruction and StateMachineInstruction, so 
 produced a template with every example_usage field blank. These tests lock in that each model type produces a populated
 example.
 """
-import json
-
 import pytest
 
 import model_train_protocol as mtp
@@ -15,56 +13,12 @@ from model_train_protocol.common.constants import BOS_TOKEN, EOS_TOKEN, NON_TOKE
 from model_train_protocol.common.instructions import BaseInstruction
 from model_train_protocol.errors import TemplateFileError
 from model_train_protocol.v2.protocol.protocol_v2 import ProtocolV2
-
-STATE_MAP = {
-    "emotion": ["curious", "afraid", "confused"],
-    "intent": ["question", "statement"],
-}
-
-MULTI_CLASSIFIER_SAMPLES = [
-    ("What a curious feeling, I must be shutting up like a telescope!", {"emotion": "curious", "intent": "statement"}),
-    ("Which way ought I to go from here?", {"emotion": "confused", "intent": "question"}),
-    ("Oh dear, I do hope this fall will ever come to an end.", {"emotion": "afraid", "intent": "statement"}),
-    ("How funny it seems to talk to a cat that keeps vanishing!", {"emotion": "curious", "intent": "statement"}),
-    ("Are you quite certain that everyone here is mad?", {"emotion": "confused", "intent": "question"}),
-]
-
-
-def _input_tokenset() -> mtp.TokenSet:
-    return mtp.TokenSet(tokens=(mtp.Token("Tree"), mtp.Token("English"), mtp.Token("Alice"), mtp.Token("Talk")))
-
-
-def build_multi_classifier_protocol() -> mtp.Protocol:
-    """Builds a minimal, valid multi classifier protocol."""
-    protocol = mtp.Protocol(name="multi_classifier_template_test", inputs=1, encrypt=False)
-    protocol.add_context("The Cheshire Cat classifies each line Alice speaks.")
-
-    instruction = mtp.MultiClassifierInstruction(
-        input=mtp.InstructionInput(tokensets=[_input_tokenset()]),
-        state_map=STATE_MAP,
-        context=["Each response is a JSON object with exactly the keys 'emotion' and 'intent'."],
-    )
-    for line, classification in MULTI_CLASSIFIER_SAMPLES:
-        instruction.add_sample(input_snippets=[line], output_snippet=json.dumps(classification))
-
-    protocol.add_instruction(instruction)
-    return protocol
-
-
-def build_state_machine_protocol() -> mtp.Protocol:
-    """Builds a minimal, valid state machine protocol (regression guard for the other model types)."""
-    protocol = mtp.Protocol(name="state_machine_template_test", inputs=1, encrypt=False, state_machine=True)
-    protocol.add_context("The Cheshire Cat labels each line Alice speaks.")
-
-    instruction = mtp.StateMachineInstruction(
-        input=mtp.StateMachineInput(tokensets=[_input_tokenset()]),
-        states=["QUESTION", "STATEMENT"],
-    )
-    for line, classification in MULTI_CLASSIFIER_SAMPLES:
-        instruction.add_sample(input_snippets=[line], state=classification["intent"].upper())
-
-    protocol.add_instruction(instruction)
-    return protocol
+from tests.unit.test_template.builders import (
+    MULTI_CLASSIFIER_SAMPLES,
+    STATE_MAP,
+    build_multi_classifier_protocol,
+    build_state_machine_protocol,
+)
 
 
 class TestMultiClassifierTemplateExampleUsage:
