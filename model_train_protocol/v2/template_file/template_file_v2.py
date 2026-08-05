@@ -262,6 +262,12 @@ class TemplateFileV2:
             if basic_instruction and extended_instruction:
                 break
 
+        if basic_instruction is None and extended_instruction is None:
+            raise TemplateFileError(
+                "Could not select an instruction to build the template's example usage from."
+                f"{sorted({type(instr).__name__ for instr in self.instructions.instructions_list})}."
+            )
+
         return basic_instruction, extended_instruction
 
     def _create_examples(self) -> dict[str, str]:
