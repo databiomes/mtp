@@ -115,4 +115,4 @@ class TestVersionedFieldRequirementsArePinned:
         )
 
         assert V1_TEMPLATE_VERSION == "1.2.0"
-        assert V2_TEMPLATE_VERSION == "2.0.0"
+        assert V2_TEMPLATE_VERSION == "2.1.0"
