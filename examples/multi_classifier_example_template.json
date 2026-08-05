@@ -1,5 +1,5 @@
 {
-    "$schema": "https://mtp.schemas.databiomes.com/v2/template_2_0_0.json",
+    "$schema": "https://mtp.schemas.databiomes.com/v2/template_2_1_0.json",
     "encrypt": false,
     "model_type": "multi_classifier",
     "inputs": 1,
@@ -26,10 +26,22 @@
             ]
         }
     },
-    "states": [],
+    "states": {
+        "emotion": [
+            "curious",
+            "afraid",
+            "confused",
+            "amused"
+        ],
+        "intent": [
+            "question",
+            "statement",
+            "exclamation"
+        ]
+    },
     "example_usage": {
-        "instruction_input": "",
-        "valid_model_output": "",
+        "instruction_input": "<BOS>\nTree_English_Alice_Talk_\nWhat a curious feeling, I must be shutting up like a telescope!\nStates_\n<RUN>\n",
+        "valid_model_output": "{'emotion': 'curious', 'intent': 'exclamation'}\n<NON>\n<EOS>",
         "guardrail_model_output": ""
     }
 }

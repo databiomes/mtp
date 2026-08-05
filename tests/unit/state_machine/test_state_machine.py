@@ -82,8 +82,7 @@ class TestStateMachine:
             self,
             state_machine_instruction_with_samples: mtp.Instruction,
     ) -> None:
-        protocol: mtp.Protocol = mtp.Protocol("state_machine_two_instructions", inputs=2, encrypt=False,
-                                                  state_machine=True)
+        protocol: mtp.Protocol = mtp.Protocol("state_machine_two_instructions", inputs=2, encrypt=False)
         _add_context_lines(protocol)
         protocol.add_instruction(state_machine_instruction_with_samples)
 
@@ -94,16 +93,20 @@ class TestStateMachine:
         with pytest.raises(mtp.StateMachineError, match="A state machine protocol can only have one instruction."):
             protocol.add_instruction(second_instruction)
 
-    def test_state_machine_protocol_rejects_non_state_machine_instruction(self) -> None:
-        protocol: mtp.Protocol = mtp.Protocol("state_machine", inputs=2, encrypt=False, state_machine=True)
+    def test_state_machine_protocol_rejects_non_state_machine_instruction(
+            self,
+            state_machine_instruction_with_samples: mtp.Instruction,
+    ) -> None:
+        """A protocol is a state machine because of its StateMachineInstruction, which then excludes other types."""
+        protocol: mtp.Protocol = mtp.Protocol("state_machine", inputs=2, encrypt=False)
         _add_context_lines(protocol)
-        instruction: mtp.Instruction = _build_basic_instruction()
+        protocol.add_instruction(state_machine_instruction_with_samples)
 
-        with pytest.raises(mtp.StateMachineError, match="must be of type StateMachineInstruction"):
-            protocol.add_instruction(instruction)
+        with pytest.raises(mtp.StateMachineError, match="only train one type of model"):
+            protocol.add_instruction(_build_basic_instruction())
 
     def test_state_machine_protocol_rejects_numeric_output_tokens(self) -> None:
-        protocol: mtp.Protocol = mtp.Protocol("state_machine", inputs=2, encrypt=False, state_machine=True)
+        protocol: mtp.Protocol = mtp.Protocol("state_machine", inputs=2, encrypt=False)
         instruction: mtp.StateMachineInstruction = _build_state_machine_instruction(
             sample_count=0,
             token_prefix="SM",
@@ -114,7 +117,7 @@ class TestStateMachine:
             protocol.add_instruction(instruction)
 
     def test_state_machine_instruction_minimum_samples(self) -> None:
-        protocol: mtp.Protocol = mtp.Protocol("state_machine", inputs=2, encrypt=False, state_machine=True)
+        protocol: mtp.Protocol = mtp.Protocol("state_machine", inputs=2, encrypt=False)
         _add_context_lines(protocol)
         instruction: mtp.StateMachineInstruction = _build_state_machine_instruction(
             sample_count=9,

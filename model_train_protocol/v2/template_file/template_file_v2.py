@@ -1,7 +1,7 @@
 import random
 from dataclasses import dataclass
 from enum import Enum
-from typing import Union, List
+from typing import Dict, Union, List
 
 from model_train_protocol import Instruction, ExtendedInstruction, StateMachineInstruction, MultiClassifierInstruction
 from model_train_protocol.common.constants import BOS_TOKEN, RUN_TOKEN, EOS_TOKEN, UNK_TOKEN, NON_TOKEN, ModelType
@@ -156,7 +156,8 @@ class TemplateFileV2:
                 instructions_dict[instruction.name] = {
                     "type": InstructionTypeEnum.get_instruction_type_by_class(instruction).value,
                     "input": input_list,
-                    "output": list(set(output_strs))
+                    # Deduplicated in order rather than through a set, so the template is identical on every run.
+                    "output": list(dict.fromkeys(output_strs))
                 }
 
             return instructions_dict
@@ -255,12 +256,18 @@ class TemplateFileV2:
                             extended_instruction = instr
                     else:
                         extended_instruction = instr
-            elif isinstance(instr, StateMachineInstruction) and instr.samples:
+            elif isinstance(instr, (StateMachineInstruction, MultiClassifierInstruction)) and instr.samples:
                 if basic_instruction is None:
                     basic_instruction = instr
 
             if basic_instruction and extended_instruction:
                 break
+
+        if basic_instruction is None and extended_instruction is None:
+            raise TemplateFileError(
+                "Could not select an instruction to build the template's example usage from."
+                f"{sorted({type(instr).__name__ for instr in self.instructions.instructions_list})}."
+            )
 
         return basic_instruction, extended_instruction
 
@@ -331,6 +338,41 @@ class TemplateFileV2:
 
         return examples
 
+    def _get_states(self) -> Union[List[str], Dict[str, List[str]]]:
+        """
+        Collects the states the model may respond with, in the shape that matches the model type.
+
+        State machines answer with a single state, so their states are a flat list. Multi classifiers answer with one
+        value per classification label, so their states are a mapping of label to its acceptable values. Generative
+        models have no states and get an empty list.
+        """
+        if self.model_type == ModelType.STATE_MACHINE:
+            state_machine_instruction: BaseInstruction = self.instructions_list[0]
+            if not isinstance(state_machine_instruction, StateMachineInstruction):
+                raise TemplateFileError(
+                    "For state machine templates, the provided instruction must be a StateMachineInstruction.")
+            return state_machine_instruction.get_states()
+
+        if self.model_type == ModelType.MULTI_CLASSIFICATION:
+            classifier_instructions: List[MultiClassifierInstruction] = [
+                instruction for instruction in self.instructions_list
+                if isinstance(instruction, MultiClassifierInstruction)
+            ]
+            if not classifier_instructions:
+                raise TemplateFileError(
+                    "For multi classifier templates, at least one instruction must be a MultiClassifierInstruction.")
+
+            # Labels shared between instructions are merged, so the template lists every value the model may answer
+            # with for a given label.
+            states: Dict[str, List[str]] = {}
+            for instruction in classifier_instructions:
+                for label, values in instruction.get_states().items():
+                    merged: List[str] = states.setdefault(label, [])
+                    merged.extend(value for value in values if value not in merged)
+            return states
+
+        return []
+
     def to_json(self) -> dict:
         """Converts the entire template to a JSON-serializable dictionary."""
         tokens_dict: dict[str, dict[str, str]] = self.tokens.to_json()
@@ -348,18 +390,10 @@ class TemplateFileV2:
         example_usage_dict: dict[str, str] = self._create_examples()
         example_usage: ExampleUsage = ExampleUsage(**example_usage_dict)
 
-        states: List[str] = []
-        if self.model_type == ModelType.STATE_MACHINE:
-            state_machine_instruction: BaseInstruction = self.instructions_list[0]
-            if not isinstance(state_machine_instruction, StateMachineInstruction):
-                raise TemplateFileError(
-                    "For state machine templates, the provided instruction must be a StateMachineInstruction.")
-            states = state_machine_instruction.get_states()
-
         template: TemplateModel = TemplateModel(
             encrypt=self.encrypt,
             model_type=self.model_type.value,
-            states=states,
+            states=self._get_states(),
             inputs=self.inputs,
             tokens=tokens,
             instructions=instruction_models,

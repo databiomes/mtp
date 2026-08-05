@@ -7,7 +7,7 @@ reject the other with a clear error rather than failing somewhere deeper.
 """
 
 import pytest
-from model_train_protocol_schemas.utils import get_example_bloom_file
+from model_train_protocol_schemas.utils import get_example_bloom_file, get_template_schema_url
 from packaging.version import Version
 
 from model_train_protocol.errors import ProtocolError
@@ -67,7 +67,9 @@ class TestProtocolsAcceptOnlyTheirOwnFormat:
 
         template = ProtocolV2.from_json(bloom).get_template_file().to_json()
 
-        assert "template_2_0_0.json" in template["$schema"]
+        # V2 always stamps the template schema version bundled with the schemas package, which moves independently of
+        # the bloom version being read.
+        assert template["$schema"] == get_template_schema_url()
         assert template["model_type"] == bloom["model_type"]
         assert "state_machine" not in template
 

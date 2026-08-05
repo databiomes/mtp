@@ -342,14 +342,14 @@ files = [
 
 [[package]]
 name = "model-train-protocol-schemas"
-version = "3.2.1"
+version = "3.2.2"
 description = "Contains schemas supporting the model-train-protocol (mtp) library"
 optional = false
 python-versions = ">=3.13"
 groups = ["main"]
 files = [
-    {file = "model_train_protocol_schemas-3.2.1-py3-none-any.whl", hash = "sha256:8412ed6498ad90da910490bea509ba0c9c1559d4b1244f14b4a7a57e9255432a"},
-    {file = "model_train_protocol_schemas-3.2.1.tar.gz", hash = "sha256:0a1da1f7b4070d74a321c2f11f2cd8281cbc2e9beecd0b024dd97cd9455cfcd6"},
+    {file = "model_train_protocol_schemas-3.2.2-py3-none-any.whl", hash = "sha256:b96436a80ff33497422cfe0773084deebaf46717b2a00c3ab7e8153f99d65316"},
+    {file = "model_train_protocol_schemas-3.2.2.tar.gz", hash = "sha256:115c28f277ef2cfbc14f29e33114d0ee70a9f103a320adaa412d52e5cb587fd5"},
 ]
 
 [package.dependencies]
@@ -950,4 +950,4 @@ test = ["pandas", "pytest", "pytest-cov", "pytest-mock", "pytest-xdist", "python
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13"
-content-hash = "e9706cb152eca618d048a6b67f44e7673465d7f4f753ae1f5f12c66a3dea9a1c"
+content-hash = "df3f83edcbaea87f442bc7a7ef09eaa59e20ca25cd0a00cc0998c608ecfad8a5"

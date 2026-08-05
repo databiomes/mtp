@@ -1239,7 +1239,6 @@ class TestProtocol:
         loaded_protocol: ProtocolV2 = ProtocolV2.from_json(protocol_json)
 
         assert loaded_protocol.get_model_type().value == "generative"
-        assert loaded_protocol.state_machine is False
 
     def test_protocol_from_json_state_machine_round_trip(self, state_machine_protocol: ProtocolV2):
         """Test Protocol.from_json dispatches a state machine bloom to the state machine loader."""
@@ -1250,7 +1249,6 @@ class TestProtocol:
         loaded_protocol: ProtocolV2 = ProtocolV2.from_json(protocol_json)
 
         assert loaded_protocol.get_model_type().value == "state_machine"
-        assert loaded_protocol.state_machine is True
         assert loaded_protocol.get_protocol_file(valid=True).to_json() == protocol_json
 
     def test_protocol_from_json_multi_classifier_round_trip(self):

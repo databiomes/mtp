@@ -43,7 +43,7 @@ class CSVConversion:
         """
         self.csv_data: pd.DataFrame = self._process_dataframe(csv_data)
         self.ordered_lines: List[CSVLine] = self._format_lines()
-        self.protocol: ProtocolV2 = ProtocolV2(name=protocol_name, inputs=1, encrypt=False, state_machine=True)
+        self.protocol: ProtocolV2 = ProtocolV2(name=protocol_name, inputs=1, encrypt=False)
         self.standard_input: StateMachineInput = StateMachineInput(
             tokensets=[self.input_tokenset])
         self.unique_states: set[str] = self._get_unique_states()

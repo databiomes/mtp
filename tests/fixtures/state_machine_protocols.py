@@ -52,14 +52,14 @@ def state_machine_instruction_with_few_samples() -> mtp.StateMachineInstruction:
 
 @pytest.fixture
 def empty_state_machine_protocol() -> mtp.Protocol:
-    protocol: mtp.Protocol = mtp.Protocol("empty_state_machine", inputs=2, encrypt=False, state_machine=True)
+    protocol: mtp.Protocol = mtp.Protocol("empty_state_machine", inputs=2, encrypt=False)
     _add_context_lines(protocol)
     return protocol
 
 
 @pytest.fixture
 def state_machine_protocol(state_machine_instruction_with_samples: mtp.StateMachineInstruction) -> mtp.Protocol:
-    protocol: mtp.Protocol = mtp.Protocol("state_machine_protocol", inputs=2, encrypt=False, state_machine=True)
+    protocol: mtp.Protocol = mtp.Protocol("state_machine_protocol", inputs=2, encrypt=False)
     _add_context_lines(protocol)
     protocol.add_instruction(state_machine_instruction_with_samples)
     return protocol

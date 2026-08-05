@@ -74,7 +74,9 @@ class StateMachineInstruction(BaseInstruction):
 
     def get_states(self) -> list[str]:
         """Returns the list of states defined in the TokenSet."""
-        states: list[str] = list(set([sample.output for sample in self.samples]))
+        # Deduplicated in sample order rather than through a set, so the states (and every file generated from them)
+        # come out the same on every run.
+        states: list[str] = list(dict.fromkeys(sample.output for sample in self.samples))
         if self.has_guardrails:
             states.append("GUARDRAIL")
         return states
