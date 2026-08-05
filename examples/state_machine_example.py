@@ -13,7 +13,7 @@ import model_train_protocol as mtp
 # A state machine protocol contains exactly one StateMachineInstruction, does not use final tokens, and does not
 # allow numeric output.
 
-protocol = mtp.Protocol(name="state_machine_example", inputs=1, encrypt=False, state_machine=True)
+protocol = mtp.Protocol(name="state_machine_example", inputs=1, encrypt=False)
 
 protocol.add_context(
     "Alice was tired of sitting by her sister with nothing to do, and she began to wonder what she could do to pass the time.")

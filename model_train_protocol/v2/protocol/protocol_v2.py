@@ -43,21 +43,22 @@ BLOOM_V2_REQUIRED_FIELDS: tuple[str, ...] = (
 class ProtocolV2(BaseProtocol):
     """Model Train Protocol (MTP) class for creating the training configuration."""
 
-    def __init__(self, name: str, inputs: int, encrypt: bool = True, state_machine: bool = False,
+    def __init__(self, name: str, inputs: int, encrypt: bool = True,
                  version: Optional[Version | str] = None):
         """
         Initialize the Model Train Protocol (MTP)
 
+        The kind of model a protocol trains is decided by the Instructions added to it, not declared up front. See
+        get_model_type().
+
         :param name: The name of the protocol.
         :param inputs: The number of lines in each Instruction input. Must be at least 1.
         :param encrypt: Whether to encrypt Tokens with unspecified with hashed keys. Default is True.
-        :param state_machine: Whether this Protocol is training a state machine with defined states / outputs.
         :param version: The version of the Bloom file. If None, defaults to the latest version.
         """
         self.name: str = name
         self.input_count: int = inputs  # Number of lines in instruction samples
         self.encrypt: bool = encrypt
-        self.state_machine: bool = state_machine
         if isinstance(version, str):
             version = Version(version)
         self._version: Version = version if version is not None else get_default_protocol_version()
@@ -95,8 +96,9 @@ class ProtocolV2(BaseProtocol):
         encrypt: bool = protocol_file["encrypted"]
 
         model_type: ModelType = ModelType(protocol_file["model_type"])
-        protocol = ProtocolV2(name=name, inputs=inputs, encrypt=encrypt,
-                              state_machine=(model_type == ModelType.STATE_MACHINE))
+        # The loaders build the instruction types the model_type calls for, which is what makes the loaded protocol
+        # report that same model type back.
+        protocol = ProtocolV2(name=name, inputs=inputs, encrypt=encrypt)
         protocol.context = protocol_file["context"]
 
         tokens: dict[str, Token] = {}
@@ -129,17 +131,64 @@ class ProtocolV2(BaseProtocol):
                 f"Line: '{line}' has {len(line)} characters."
             )
 
+    @classmethod
+    def get_model_type_for_instruction(cls, instruction: BaseInstruction) -> ModelType:
+        """
+        Returns the ModelType that the given Instruction trains.
+
+        The instruction class decides the model type, so a protocol never has to be told what it is training.
+
+        :param instruction: The Instruction to classify.
+        :return: The ModelType the Instruction belongs to.
+        :raises ProtocolTypeError: If the Instruction is not of a known type.
+        """
+        if isinstance(instruction, StateMachineInstruction):
+            return ModelType.STATE_MACHINE
+        if isinstance(instruction, MultiClassifierInstruction):
+            return ModelType.MULTI_CLASSIFICATION
+        if isinstance(instruction, BaseInstruction):
+            return ModelType.GENERATIVE
+        raise ProtocolTypeError(
+            f"Instructions must be an instance of BaseInstruction. Got: {type(instruction)}.")
+
+    def _validate_instruction_model_type(self, instruction: BaseInstruction) -> ModelType:
+        """
+        Asserts that the Instruction trains the same model type as the Instructions already in the protocol.
+
+        A protocol trains exactly one kind of model, and the Instruction classes it holds are what determine which one,
+        so mixing (for example) a MultiClassifierInstruction into a generative protocol has no meaning and is rejected
+        here rather than producing an unusable bloom file.
+
+        :param instruction: The Instruction being added.
+        :return: The ModelType of the Instruction.
+        """
+        instruction_model_type: ModelType = self.get_model_type_for_instruction(instruction)
+
+        for existing_instruction in self.instructions:
+            existing_model_type: ModelType = self.get_model_type_for_instruction(existing_instruction)
+            if existing_model_type != instruction_model_type:
+                error = StateMachineError if ModelType.STATE_MACHINE in (
+                    existing_model_type, instruction_model_type) else ProtocolTypeError
+                raise error(
+                    f"A protocol can only train one type of model, so all of its instructions must be of the same "
+                    f"type. This protocol is training a '{existing_model_type.value}' model because of instruction "
+                    f"'{existing_instruction.name}' ({type(existing_instruction).__name__}), but instruction "
+                    f"'{instruction.name}' ({type(instruction).__name__}) trains a "
+                    f"'{instruction_model_type.value}' model."
+                )
+
+        return instruction_model_type
+
     def add_instruction(self, instruction: BaseInstruction):
         """
         Adds an Instruction (and its components) to the protocol.
 
-        Asserts that all samples in the instruction match the defined sample line size.
+        The Instruction must train the same model type as the Instructions already added, and all of its samples must
+        match the defined sample line size.
         """
-        if self.state_machine:
-            if not isinstance(instruction, StateMachineInstruction):
-                raise StateMachineError(
-                    f"Instructions in a state machine protocol must be of type StateMachineInstruction. Found instruction of type {type(instruction)}.")
+        instruction_model_type: ModelType = self._validate_instruction_model_type(instruction)
 
+        if instruction_model_type == ModelType.STATE_MACHINE:
             if len(self.instructions) >= 1:
                 raise StateMachineError(
                     f"A state machine protocol can only have one instruction.")
@@ -198,15 +247,15 @@ class ProtocolV2(BaseProtocol):
 
     def get_model_type(self) -> ModelType:
         """
-        Determines the ModelTypeEnum for this protocol based on its configuration and instructions.
+        Determines the ModelTypeEnum for this protocol from the Instructions it holds.
 
-        :return: STATE_MACHINE if the protocol is a state machine, MULTI_CLASSIFICATION if it contains a
-            MultiClassifierInstruction, otherwise GENERATIVE.
+        All instructions in a protocol train the same model type (enforced by add_instruction), so any one of them
+        answers the question. A protocol with no instructions yet is generative by default.
+
+        :return: The ModelType of the protocol's instructions.
         """
-        if self.state_machine:
-            return ModelType.STATE_MACHINE
-        if any(isinstance(instruction, MultiClassifierInstruction) for instruction in self.instructions):
-            return ModelType.MULTI_CLASSIFICATION
+        for instruction in self.instructions:
+            return self.get_model_type_for_instruction(instruction)
         return ModelType.GENERATIVE
 
     def get_protocol_file(self, valid: bool) -> ProtocolFileV2:
@@ -397,7 +446,7 @@ class ProtocolV2(BaseProtocol):
                 for guardrail in instruction.get_guardrails():
                     guardrail.validate_guardrail()
 
-            if self.state_machine:
+            if self.get_model_type() == ModelType.STATE_MACHINE:
                 self._validate_state_machine_requirements()
 
         except Exception as e:

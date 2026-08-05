@@ -20,7 +20,7 @@ from model_train_protocol.common.constants import ModelType
 from model_train_protocol.errors import TemplateFileError
 from model_train_protocol.v2.protocol.protocol_v2 import ProtocolV2
 from model_train_protocol.v2.template_file.template_file_v2 import TemplateFileV2
-from tests.unit.test_template.builders import (
+from tests.fixtures.model_type_protocols import (
     MULTI_CLASSIFIER_SAMPLES,
     STATE_MACHINE_STATES,
     STATE_MAP,

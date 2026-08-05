@@ -13,7 +13,7 @@ from model_train_protocol.common.constants import BOS_TOKEN, EOS_TOKEN, NON_TOKE
 from model_train_protocol.common.instructions import BaseInstruction
 from model_train_protocol.errors import TemplateFileError
 from model_train_protocol.v2.protocol.protocol_v2 import ProtocolV2
-from tests.unit.test_template.builders import (
+from tests.fixtures.model_type_protocols import (
     MULTI_CLASSIFIER_SAMPLES,
     STATE_MAP,
     build_multi_classifier_protocol,

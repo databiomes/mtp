@@ -1,8 +1,8 @@
 """
-Shared protocol builders for the template file tests.
+Builders for a minimal, valid protocol of each model type.
 
-Each builder returns a minimal, valid protocol of one model type so the tests can compare the templates the three
-model types produce.
+Used by the tests that compare how the three model types behave: the templates they produce, and the rule that a
+protocol may not mix instructions from more than one of them.
 """
 import json
 
@@ -61,37 +61,66 @@ def build_multi_classifier_protocol() -> mtp.Protocol:
     return protocol
 
 
-def build_state_machine_protocol() -> mtp.Protocol:
-    """Builds a minimal, valid state machine protocol."""
-    protocol = mtp.Protocol(name="state_machine_template_test", inputs=1, encrypt=False, state_machine=True)
-    protocol.add_context("The Cheshire Cat labels each line Alice speaks.")
-
+def build_state_machine_instruction(action: str = "Talk") -> mtp.StateMachineInstruction:
+    """Builds a sampled StateMachineInstruction."""
     instruction = mtp.StateMachineInstruction(
-        input=mtp.StateMachineInput(tokensets=[input_tokenset()]),
+        input=mtp.StateMachineInput(tokensets=[input_tokenset(action)]),
         states=STATE_MACHINE_STATES,
     )
     for line, classification in MULTI_CLASSIFIER_SAMPLES:
         instruction.add_sample(input_snippets=[line], state=classification["intent"].upper())
+    return instruction
 
-    protocol.add_instruction(instruction)
+
+def build_state_machine_protocol() -> mtp.Protocol:
+    """Builds a minimal, valid state machine protocol."""
+    protocol = mtp.Protocol(name="state_machine_template_test", inputs=1, encrypt=False)
+    protocol.add_context("The Cheshire Cat labels each line Alice speaks.")
+    protocol.add_instruction(build_state_machine_instruction())
     return protocol
+
+
+def build_generative_instruction(action: str = "Talk", name: str = "alice_cat_reply") -> mtp.Instruction:
+    """Builds a sampled basic (generative) Instruction."""
+    reply_token: mtp.FinalToken = mtp.FinalToken(f"Continue{action}", desc="The Cat keeps the conversation going.")
+    instruction = mtp.Instruction(
+        input=mtp.InstructionInput(tokensets=[input_tokenset(action)]),
+        output=mtp.InstructionOutput(tokenset=input_tokenset("Reply"), final=[reply_token]),
+        context=["The Cat replies to Alice."],
+        name=name,
+    )
+    for line, _ in MULTI_CLASSIFIER_SAMPLES:
+        instruction.add_sample(input_snippets=[line], output_snippet="Everyone here is quite mad, you know.",
+                               final=reply_token)
+    return instruction
+
+
+def build_extended_instruction(action: str = "Ponder", name: str = "alice_cat_extended") -> mtp.ExtendedInstruction:
+    """Builds a sampled ExtendedInstruction, which is generative like a basic Instruction."""
+    reply_token: mtp.FinalToken = mtp.FinalToken(f"Continue{action}", desc="The Cat keeps the conversation going.")
+    context_tokenset: mtp.TokenSet = input_tokenset(action)
+    prompt_tokenset: mtp.TokenSet = input_tokenset("Prompt")
+    instruction = mtp.ExtendedInstruction(
+        input=mtp.InstructionInput(tokensets=[context_tokenset, prompt_tokenset]),
+        output=mtp.ExtendedResponse(final=reply_token),
+        context=["The Cat replies to Alice at length."],
+        name=name,
+    )
+    for line, _ in MULTI_CLASSIFIER_SAMPLES:
+        instruction.add_sample(
+            inputs=[
+                context_tokenset.create_snippet(string=line),
+                prompt_tokenset.create_snippet(string="Why is a raven like a writing desk?"),
+            ],
+            response_string="Everyone here is quite mad, you know.",
+            final=reply_token,
+        )
+    return instruction
 
 
 def build_generative_protocol() -> mtp.Protocol:
     """Builds a minimal, valid generative protocol."""
     protocol = mtp.Protocol(name="generative_template_test", inputs=1, encrypt=False)
     protocol.add_context("The Cheshire Cat answers each line Alice speaks.")
-
-    reply_token: mtp.FinalToken = mtp.FinalToken("Continue", desc="The Cat keeps the conversation going.")
-    instruction = mtp.Instruction(
-        input=mtp.InstructionInput(tokensets=[input_tokenset()]),
-        output=mtp.InstructionOutput(tokenset=input_tokenset("Reply"), final=[reply_token]),
-        context=["The Cat replies to Alice."],
-        name="alice_cat_reply",
-    )
-    for line, _ in MULTI_CLASSIFIER_SAMPLES:
-        instruction.add_sample(input_snippets=[line], output_snippet="Everyone here is quite mad, you know.",
-                               final=reply_token)
-
-    protocol.add_instruction(instruction)
+    protocol.add_instruction(build_generative_instruction())
     return protocol

@@ -3,6 +3,7 @@ Unit tests for CSV conversion functionality.
 """
 
 from model_train_protocol import StateMachineInstruction
+from model_train_protocol.common.constants import ModelType
 from model_train_protocol.common.instructions import BaseInstruction
 from model_train_protocol.csv.conversion import CSVConversion, CSVLine
 from model_train_protocol.errors.conversion import ConversionError
@@ -54,7 +55,6 @@ class TestCSVConversion:
         assert conversion.protocol.name == "Test Protocol"
         assert conversion.protocol.input_count == 1
         assert conversion.protocol.encrypt is False
-        assert conversion.protocol.state_machine is True
         assert len(conversion.ordered_lines) == 12
 
     def test_initialization_default_protocol_name(self, valid_csv_data):
@@ -473,4 +473,4 @@ class TestCSVConversionInstructionNaming:
         assert instruction.name == "StateMachineInstruction"
         
         # Verify it's a state machine protocol
-        assert protocol.state_machine is True
+        assert protocol.get_model_type() == ModelType.STATE_MACHINE

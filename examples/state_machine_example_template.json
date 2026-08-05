@@ -29,11 +29,11 @@
         }
     },
     "states": [
-        "MADNESS",
-        "IDENTITY",
         "DIRECTION",
-        "FAREWELL",
+        "IDENTITY",
+        "MADNESS",
         "LOCATION",
+        "FAREWELL",
         "GUARDRAIL"
     ],
     "example_usage": {

@@ -156,7 +156,8 @@ class TemplateFileV2:
                 instructions_dict[instruction.name] = {
                     "type": InstructionTypeEnum.get_instruction_type_by_class(instruction).value,
                     "input": input_list,
-                    "output": list(set(output_strs))
+                    # Deduplicated in order rather than through a set, so the template is identical on every run.
+                    "output": list(dict.fromkeys(output_strs))
                 }
 
             return instructions_dict
