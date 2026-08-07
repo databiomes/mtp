@@ -2,6 +2,7 @@
 Unit tests for the Protocol class.
 """
 import json
+import warnings
 from pathlib import Path
 
 import pytest
@@ -121,44 +122,50 @@ class TestProtocol:
         with pytest.raises(TypeError, match="Context must be a string"):
             protocol.add_context(None)
 
-    def test_protocol_add_context_line_length_exceeds_limit_raises_error(self):
-        """Test that protocol context lines exceeding 300 characters raise an error."""
-        from model_train_protocol.common.constants import MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE
-        
+    def test_protocol_add_context_line_length_exceeds_recommendation_warns(self):
+        """Test that protocol context lines exceeding the recommended length warn but are accepted."""
+        from model_train_protocol.common.constants import RECOMMENDED_MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE
+
         protocol = ProtocolV2("test_protocol", inputs=3)
 
-        # Create context line with 301 characters (should fail)
-        long_context = "a" * (MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE + 1)
+        # Create context line one character over the recommendation (should warn, not raise)
+        long_context = "a" * (RECOMMENDED_MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE + 1)
 
-        with pytest.raises(ValueError, match=f"Context line exceeds maximum length of {MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE} characters"):
+        with pytest.warns(UserWarning,
+                          match=f"Context line exceeds recommended maximum length of "
+                                f"{RECOMMENDED_MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE} characters"):
             protocol.add_context(long_context)
 
-    def test_protocol_add_context_line_length_at_limit_succeeds(self):
-        """Test that protocol context lines with exactly 300 characters succeed."""
-        from model_train_protocol.common.constants import MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE
-        
+        assert protocol.context == [long_context]
+
+    def test_protocol_add_context_line_length_at_recommendation_does_not_warn(self):
+        """Test that protocol context lines at exactly the recommended length do not warn."""
+        from model_train_protocol.common.constants import RECOMMENDED_MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE
+
         protocol = ProtocolV2("test_protocol", inputs=3)
 
-        # Create context line with exactly 300 characters (should succeed)
-        context_line = "a" * MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE
-        protocol.add_context(context_line)
+        # Create context line at exactly the recommended length (should not warn)
+        context_line = "a" * RECOMMENDED_MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            protocol.add_context(context_line)
 
         assert len(protocol.context) == 1
-        assert len(protocol.context[0]) == MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE
+        assert len(protocol.context[0]) == RECOMMENDED_MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE
 
-    def test_protocol_add_context_multiple_lines_at_limit_succeeds(self):
-        """Test that multiple protocol context lines at 300 characters each succeed."""
-        from model_train_protocol.common.constants import MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE
-        
+    def test_protocol_add_context_multiple_lines_at_recommendation_succeeds(self):
+        """Test that multiple protocol context lines at the recommended length each succeed."""
+        from model_train_protocol.common.constants import RECOMMENDED_MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE
+
         protocol = ProtocolV2("test_protocol", inputs=3)
 
-        # Add multiple context lines, each at exactly 300 characters
+        # Add multiple context lines, each at exactly the recommended length
         for i in range(5):
-            context_line = "a" * MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE
+            context_line = "a" * RECOMMENDED_MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE
             protocol.add_context(context_line)
 
         assert len(protocol.context) == 5
-        assert all(len(line) == MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE for line in protocol.context)
+        assert all(len(line) == RECOMMENDED_MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE for line in protocol.context)
 
     def test_protocol_add_token_basic(self):
         """Test adding basic token to protocol."""

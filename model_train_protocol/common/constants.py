@@ -11,13 +11,15 @@ PAD_TOKEN: SpecialToken = SpecialToken(value="<PAD>", key="<PAD>", special="pad"
 UNK_TOKEN: SpecialToken = SpecialToken(value="<UNK>", key="<UNK>", special="unknown")
 
 MINIMUM_TOTAL_CONTEXT_LINES = 10
-MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE = 300
 PER_FINAL_TOKEN_SAMPLE_MINIMUM = 3
 
 MAXIMUM_CONTEXT_LINES_PER_INSTRUCTION: int = 100_000 # Arbitrary large number to allow as many context lines as needed
-MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE: int = 300
 
-MAXIMUM_CHARACTERS_PER_SNIPPET: int = 300
+# String lengths are unbounded as of bloom 2.0.1. These are recommendations only: exceeding them
+# warns rather than raising.
+RECOMMENDED_MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE: int = 3000
+RECOMMENDED_MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE: int = 3000
+RECOMMENDED_MAXIMUM_CHARACTERS_PER_SNIPPET: int = 3000
 
 GENERAL_MINIMUM_INSTRUCTION_SAMPLES: int = 3
 STATE_MACHINE_MINIMUM_INSTRUCTION_SAMPLES: int = 10
