@@ -1,11 +1,13 @@
 import abc
+import warnings
 from abc import ABC
 from typing import List, Optional, Union
 
 from .input.BaseInput import BaseInput
 from .output.BaseOutput import BaseOutput
-from ..constants import MAXIMUM_CONTEXT_LINES_PER_INSTRUCTION, MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE, \
-    MAXIMUM_CHARACTERS_PER_SNIPPET, GENERAL_MINIMUM_INSTRUCTION_SAMPLES
+from ..constants import MAXIMUM_CONTEXT_LINES_PER_INSTRUCTION, \
+    RECOMMENDED_MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE, \
+    RECOMMENDED_MAXIMUM_CHARACTERS_PER_SNIPPET, GENERAL_MINIMUM_INSTRUCTION_SAMPLES
 from ..guardrails import Guardrail
 from ..tokens.FinalToken import FinalToken
 from ..tokens.Token import Token
@@ -135,7 +137,7 @@ class BaseInstruction(ABC):
         self._validate_context()
         for sample in self.samples:
             all_snippet_strings: List[str] = sample.strings
-            self.___enforce_max_chars(all_snippet_strings)
+            self.___warn_on_recommended_max_chars(all_snippet_strings)
 
     def add_context(self, context: str):
         """Adds context to the Instruction."""
@@ -144,19 +146,21 @@ class BaseInstruction(ABC):
 
     @classmethod
     def _validate_snippet_length(cls, inputs: List[Snippet], response_snippet: Snippet):
-        """Validates that all snippets in the samples are within the max length"""
+        """Warns if any snippet in the samples exceeds the recommended max length"""
         all_snippets: List[Snippet] = inputs + [response_snippet]
         all_snippet_strings: List[str] = [snippet.string for snippet in all_snippets]
-        cls.___enforce_max_chars(all_snippet_strings)
+        cls.___warn_on_recommended_max_chars(all_snippet_strings)
 
     @classmethod
-    def ___enforce_max_chars(cls, snippet_strings: List[str]):
-        """Validates that all snippet strings are within the max length"""
+    def ___warn_on_recommended_max_chars(cls, snippet_strings: List[str]):
+        """Warns if any snippet string exceeds the recommended max length"""
         for snippet_string in snippet_strings:
-            if len(snippet_string) > MAXIMUM_CHARACTERS_PER_SNIPPET:
-                raise InstructionError(
-                    f"Snippet length {len(snippet_string)} exceeds maximum allowed length of "
-                    f"{MAXIMUM_CHARACTERS_PER_SNIPPET} characters for snippet: {snippet_string}"
+            if len(snippet_string) > RECOMMENDED_MAXIMUM_CHARACTERS_PER_SNIPPET:
+                warnings.warn(
+                    f"Snippet length {len(snippet_string)} exceeds recommended maximum length of "
+                    f"{RECOMMENDED_MAXIMUM_CHARACTERS_PER_SNIPPET} characters for snippet: {snippet_string}",
+                    UserWarning,
+                    stacklevel=3,
                 )
 
     def get_tokens(self) -> List[Token]:
@@ -242,10 +246,13 @@ class BaseInstruction(ABC):
                              f"Current lines: {len(self.context)}")
 
         for i, line in enumerate(self.context):
-            if len(line) > MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE:
-                raise InstructionError(
-                    f"Context line {i} exceeds maximum allowed length of {MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE} characters. "
-                    f"Current length: {len(line)}"
+            if len(line) > RECOMMENDED_MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE:
+                warnings.warn(
+                    f"Context line {i} exceeds recommended maximum length of "
+                    f"{RECOMMENDED_MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE} characters. "
+                    f"Current length: {len(line)}",
+                    UserWarning,
+                    stacklevel=3,
                 )
 
     def _validate_input_snippets(self):

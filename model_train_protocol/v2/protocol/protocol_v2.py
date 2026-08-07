@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import warnings
 from typing import List, Optional, Set, Dict
 
 from packaging.version import Version
@@ -9,7 +10,7 @@ from packaging.version import Version
 from model_train_protocol import Token, FinalToken
 from model_train_protocol.common.constants import BOS_TOKEN, EOS_TOKEN, RUN_TOKEN, PAD_TOKEN, UNK_TOKEN, NON_TOKEN, \
     MINIMUM_TOTAL_CONTEXT_LINES, PER_FINAL_TOKEN_SAMPLE_MINIMUM, \
-    MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE, ModelType
+    RECOMMENDED_MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE, ModelType
 from model_train_protocol.common.instructions.BaseInstruction import BaseInstruction
 from model_train_protocol.common.instructions.MultiClassifierInstruction import MultiClassifierInstruction
 from model_train_protocol.common.instructions.StateMachineInstruction import StateMachineInstruction
@@ -118,17 +119,20 @@ class ProtocolV2(BaseProtocol):
         if not isinstance(context, str):
             raise ProtocolTypeError("Context must be a string.")
 
-        self._validate_context_line_length(context)
+        self._warn_on_context_line_length(context)
 
         self.context.append(context)
 
     @classmethod
-    def _validate_context_line_length(cls, line: str):
-        """Validates that each context line does not exceed MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE."""
-        if len(line) > MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE:
-            raise ProtocolError(
-                f"Context line exceeds maximum length of {MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE} characters.\n"
-                f"Line: '{line}' has {len(line)} characters."
+    def _warn_on_context_line_length(cls, line: str):
+        """Warns if a context line exceeds RECOMMENDED_MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE."""
+        if len(line) > RECOMMENDED_MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE:
+            warnings.warn(
+                f"Context line exceeds recommended maximum length of "
+                f"{RECOMMENDED_MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE} characters.\n"
+                f"Line: '{line}' has {len(line)} characters.",
+                UserWarning,
+                stacklevel=3,
             )
 
     @classmethod
@@ -435,7 +439,7 @@ class ProtocolV2(BaseProtocol):
 
             self._validate_context_count()
             for line in self.context:
-                self._validate_context_line_length(line)
+                self._warn_on_context_line_length(line)
 
             used_values: Set[str] = {token.value for token in self.tokens}
             validate_string_subset(used_values)

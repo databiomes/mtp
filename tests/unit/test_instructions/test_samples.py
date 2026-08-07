@@ -3,6 +3,8 @@ Unit tests for sample creation and validation with NumToken and NumListToken res
 Tests error handling when values are not provided or wrong types are provided.
 """
 
+import warnings
+
 import pytest
 from model_train_protocol.common.tokens import Token, NumToken, NumListToken, FinalToken, FinalNumToken
 from model_train_protocol.common.tokens import TokenSet
@@ -753,50 +755,56 @@ class TestInstructionValidation:
             output_value=None  # Valid None value
         )
 
-    def test_snippet_length_within_limit_succeeds(self, simple_tokenset, user_tokenset):
-        """Test that snippets with exactly 300 characters are accepted."""
-        from model_train_protocol.common.constants import MAXIMUM_CHARACTERS_PER_SNIPPET
-        
+    def test_snippet_length_within_recommendation_does_not_warn(self, simple_tokenset, user_tokenset):
+        """Test that snippets at exactly the recommended length are accepted without a warning."""
+        from model_train_protocol.common.constants import RECOMMENDED_MAXIMUM_CHARACTERS_PER_SNIPPET
+
         final_token = FinalToken("Result")
         instruction_input = InstructionInput(tokensets=[simple_tokenset, user_tokenset])
         instruction_output = InstructionOutput(tokenset=simple_tokenset, final=final_token)
         instruction = Instruction(name='instruction_1', input=instruction_input, output=instruction_output)
 
-        # Create snippets with exactly 300 characters (should succeed)
-        context_snippet1 = simple_tokenset.create_snippet("a" * MAXIMUM_CHARACTERS_PER_SNIPPET)
-        context_snippet2 = user_tokenset.create_snippet("b" * MAXIMUM_CHARACTERS_PER_SNIPPET)
-        output_snippet = simple_tokenset.create_snippet("c" * MAXIMUM_CHARACTERS_PER_SNIPPET)
+        # Create snippets at exactly the recommended length (should succeed)
+        context_snippet1 = simple_tokenset.create_snippet("a" * RECOMMENDED_MAXIMUM_CHARACTERS_PER_SNIPPET)
+        context_snippet2 = user_tokenset.create_snippet("b" * RECOMMENDED_MAXIMUM_CHARACTERS_PER_SNIPPET)
+        output_snippet = simple_tokenset.create_snippet("c" * RECOMMENDED_MAXIMUM_CHARACTERS_PER_SNIPPET)
 
-        # Should not raise error
-        instruction.add_sample(
-            input_snippets=[context_snippet1, context_snippet2],
-            output_snippet=output_snippet
-        )
+        # Should not raise or warn
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            instruction.add_sample(
+                input_snippets=[context_snippet1, context_snippet2],
+                output_snippet=output_snippet
+            )
 
-    def test_snippet_length_exceeds_limit_raises_error(self, simple_tokenset, user_tokenset):
-        """Test that snippets exceeding 300 characters raise an error."""
-        from model_train_protocol.common.constants import MAXIMUM_CHARACTERS_PER_SNIPPET
-        
+    def test_snippet_length_exceeds_recommendation_warns(self, simple_tokenset, user_tokenset):
+        """Test that snippets exceeding the recommended length warn but are accepted."""
+        from model_train_protocol.common.constants import RECOMMENDED_MAXIMUM_CHARACTERS_PER_SNIPPET
+
         final_token = FinalToken("Result")
         instruction_input = InstructionInput(tokensets=[simple_tokenset, user_tokenset])
         instruction_output = InstructionOutput(tokenset=simple_tokenset, final=final_token)
         instruction = Instruction(name='instruction_1', input=instruction_input, output=instruction_output)
 
-        # Create snippet with 301 characters (should fail)
-        long_snippet = simple_tokenset.create_snippet("a" * (MAXIMUM_CHARACTERS_PER_SNIPPET + 1))
+        # Create snippet one character over the recommendation (should warn, not raise)
+        long_snippet = simple_tokenset.create_snippet("a" * (RECOMMENDED_MAXIMUM_CHARACTERS_PER_SNIPPET + 1))
         context_snippet2 = user_tokenset.create_snippet("Context 2")
         output_snippet = simple_tokenset.create_snippet("Output")
 
-        with pytest.raises(ValueError, match=f"Snippet length.*exceeds maximum allowed length of {MAXIMUM_CHARACTERS_PER_SNIPPET} characters"):
+        with pytest.warns(UserWarning,
+                          match=f"Snippet length.*exceeds recommended maximum length of "
+                                f"{RECOMMENDED_MAXIMUM_CHARACTERS_PER_SNIPPET} characters"):
             instruction.add_sample(
                 input_snippets=[long_snippet, context_snippet2],
                 output_snippet=output_snippet
             )
 
-    def test_output_snippet_length_exceeds_limit_raises_error(self, simple_tokenset, user_tokenset):
-        """Test that output snippets exceeding 300 characters raise an error."""
-        from model_train_protocol.common.constants import MAXIMUM_CHARACTERS_PER_SNIPPET
-        
+        assert len(instruction.samples) == 1
+
+    def test_output_snippet_length_exceeds_recommendation_warns(self, simple_tokenset, user_tokenset):
+        """Test that output snippets exceeding the recommended length warn but are accepted."""
+        from model_train_protocol.common.constants import RECOMMENDED_MAXIMUM_CHARACTERS_PER_SNIPPET
+
         final_token = FinalToken("Result")
         instruction_input = InstructionInput(tokensets=[simple_tokenset, user_tokenset])
         instruction_output = InstructionOutput(tokenset=simple_tokenset, final=final_token)
@@ -804,14 +812,18 @@ class TestInstructionValidation:
 
         context_snippet1 = simple_tokenset.create_snippet("Context 1")
         context_snippet2 = user_tokenset.create_snippet("Context 2")
-        # Create output snippet with 301 characters (should fail)
-        long_output_snippet = simple_tokenset.create_snippet("a" * (MAXIMUM_CHARACTERS_PER_SNIPPET + 1))
+        # Create output snippet one character over the recommendation (should warn, not raise)
+        long_output_snippet = simple_tokenset.create_snippet("a" * (RECOMMENDED_MAXIMUM_CHARACTERS_PER_SNIPPET + 1))
 
-        with pytest.raises(ValueError, match=f"Snippet length.*exceeds maximum allowed length of {MAXIMUM_CHARACTERS_PER_SNIPPET} characters"):
+        with pytest.warns(UserWarning,
+                          match=f"Snippet length.*exceeds recommended maximum length of "
+                                f"{RECOMMENDED_MAXIMUM_CHARACTERS_PER_SNIPPET} characters"):
             instruction.add_sample(
                 input_snippets=[context_snippet1, context_snippet2],
                 output_snippet=long_output_snippet
             )
+
+        assert len(instruction.samples) == 1
 
     @pytest.mark.skip(reason="Current implementation does not enforce maximum context lines, but this test is here for future validation when implemented.")
     def test_instruction_context_maximum_lines_exceeds_limit_raises_error(self, simple_tokenset, user_tokenset):
@@ -850,44 +862,52 @@ class TestInstructionValidation:
         )
         assert len(instruction.context) == MAXIMUM_CONTEXT_LINES_PER_INSTRUCTION
 
-    def test_instruction_context_line_length_exceeds_limit_raises_error(self, simple_tokenset, user_tokenset):
-        """Test that instruction context lines exceeding 300 characters raise an error."""
-        from model_train_protocol.common.constants import MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE
-        
+    def test_instruction_context_line_length_exceeds_recommendation_warns(self, simple_tokenset, user_tokenset):
+        """Test that instruction context lines exceeding the recommended length warn but are accepted."""
+        from model_train_protocol.common.constants import RECOMMENDED_MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE
+
         final_token = FinalToken("Result")
         instruction_input = InstructionInput(tokensets=[simple_tokenset, user_tokenset])
         instruction_output = InstructionOutput(tokenset=simple_tokenset, final=final_token)
 
-        # Create context with one line exceeding 300 characters (should fail)
+        # Create context with one line over the recommendation (should warn, not raise)
+        long_line = "a" * (RECOMMENDED_MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE + 1)
         context_lines = [
             "Normal context line",
-            "a" * (MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE + 1)  # 301 characters
+            long_line
         ]
 
-        with pytest.raises(ValueError, match=f"Context line.*exceeds maximum allowed length of {MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE} characters"):
-            Instruction(name='instruction_1', 
+        with pytest.warns(UserWarning,
+                          match=f"Context line.*exceeds recommended maximum length of "
+                                f"{RECOMMENDED_MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE} characters"):
+            instruction = Instruction(name='instruction_1',
                 input=instruction_input,
                 output=instruction_output,
                 context=context_lines
             )
 
-    def test_instruction_context_line_length_at_limit_succeeds(self, simple_tokenset, user_tokenset):
-        """Test that instruction context lines with exactly 300 characters succeed."""
-        from model_train_protocol.common.constants import MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE
-        
+        assert instruction.context == context_lines
+
+    def test_instruction_context_line_length_at_recommendation_does_not_warn(self, simple_tokenset, user_tokenset):
+        """Test that instruction context lines at exactly the recommended length do not warn."""
+        from model_train_protocol.common.constants import RECOMMENDED_MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE
+
         final_token = FinalToken("Result")
         instruction_input = InstructionInput(tokensets=[simple_tokenset, user_tokenset])
         instruction_output = InstructionOutput(tokenset=simple_tokenset, final=final_token)
 
-        # Create context with lines at exactly 300 characters (should succeed)
+        # Create context with lines at exactly the recommended length (should succeed without warning)
         context_lines = [
-            "a" * MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE,
-            "b" * MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE
+            "a" * RECOMMENDED_MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE,
+            "b" * RECOMMENDED_MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE
         ]
 
-        instruction = Instruction(name='instruction_1', 
-            input=instruction_input,
-            output=instruction_output,
-            context=context_lines
-        )
-        assert all(len(line) == MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE for line in instruction.context)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            instruction = Instruction(name='instruction_1',
+                input=instruction_input,
+                output=instruction_output,
+                context=context_lines
+            )
+        assert all(len(line) == RECOMMENDED_MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE
+                   for line in instruction.context)

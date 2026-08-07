@@ -2,23 +2,19 @@
 Pydantic models for Protocol JSON structure.
 """
 
-from typing import Annotated, List, Dict, Any, Optional, Union, Literal
+from typing import List, Dict, Any, Optional, Union, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from model_train_protocol_schemas.constants import (
-    MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE,
-    MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE,
-    MAXIMUM_CHARACTERS_PER_SNIPPET,
-    MAXIMUM_CONTEXT_LINES_PER_INSTRUCTION,
     MIN_SAMPLES_PER_GUARDRAIL,
     PER_FINAL_TOKEN_SAMPLE_MINIMUM,
 )
 
-# String types with length limits for JSON Schema (no root json_schema_extra to avoid overwriting schema).
-ContextLine = Annotated[str, Field(max_length=MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE)]
-InstructionContextLine = Annotated[str, Field(max_length=MAXIMUM_CHARACTERS_PER_INSTRUCTION_CONTEXT_LINE)]
-SnippetStr = Annotated[str, Field(max_length=MAXIMUM_CHARACTERS_PER_SNIPPET)]
+# String lengths and context line counts are unbounded as of bloom 2.0.1.
+ContextLine = str
+InstructionContextLine = str
+SnippetStr = str
 
 # Token type values emitted by Token.__class__.__name__
 TokenTypeLiteral = Literal[
@@ -82,7 +78,6 @@ class InstructionSet(BaseModel):
     guardrails: List[Guardrail] = Field(default_factory=list)
     context: List[InstructionContextLine] = Field(
         default_factory=list,
-        max_length=MAXIMUM_CONTEXT_LINES_PER_INSTRUCTION,
         description="Instruction context lines.",
     )
     set: List[List[SnippetStr]] = Field(..., description="Token set rows.")
