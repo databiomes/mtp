@@ -86,11 +86,21 @@ class CSVConversion:
         :return: A list of CSVLine objects containing the formatted data.
         """
         ordered_lines: List[CSVLine] = []
-        previous_line: CSVLine | None = None
-        for _, line in self.csv_data.iterrows():
-            formatted_line: CSVLine = self._format_line(previous_line, line)
+        previous_output: str | None = None
+        for input_value, output_value, context_value in self.csv_data.itertuples(index=False, name=None):
+            output_str: str = str(output_value)
+            if output_str == "nan" or output_str == "" or pd.isna(output_value):
+                if previous_output is None:
+                    raise ConversionError("The first line of the CSV cannot have an empty output.")
+                output_str = previous_output
+
+            formatted_line = CSVLine(
+                input_str=str(input_value),
+                output_str=output_str,
+                context_str=str(context_value),
+            )
             ordered_lines.append(formatted_line)
-            previous_line = formatted_line
+            previous_output = output_str
         return ordered_lines
 
     def _format_line(self, previous_line: CSVLine | None, line: pd.Series) -> CSVLine:
