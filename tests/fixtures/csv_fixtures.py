@@ -1,8 +1,22 @@
 """
 CSV test fixtures providing test data for CSV conversion tests.
 """
+from pathlib import Path
+
 import pandas as pd
 import pytest
+
+CSV_FIXTURES_PATH = Path(__file__).parent / 'csv'
+
+
+@pytest.fixture
+def csv_with_empty_output_file():
+    return pd.read_csv(CSV_FIXTURES_PATH / 'single_output_with_empty_row.csv')
+
+
+@pytest.fixture
+def multi_csv_with_empty_output_file():
+    return pd.read_csv(CSV_FIXTURES_PATH / 'multi_output_with_empty_row.csv')
 
 
 @pytest.fixture

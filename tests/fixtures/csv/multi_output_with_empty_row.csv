@@ -1,0 +1,4 @@
+Input,OutputOne,OutputTwo,Reference
+first input,one,positive,first reference
+second input,,neutral,second reference
+third input,three,negative,third reference
