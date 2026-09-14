@@ -1,0 +1,13 @@
+Input,OutputOne,OutputTwo,OutputThree,Reference
+Hello, how are you?,greeting,positive,opening,A friendly greeting to start a conversation
+What is your name?,name_request,neutral,question,Asking for the other speaker's name
+Tell me a joke,joke_request,positive,request,Requesting humor or entertainment
+How can I help you?,help_offer,positive,offer,Offering assistance
+What time is it?,time_request,neutral,question,Requesting current time information
+Where are you from?,location_request,curious,question,Asking about geographical origin
+Can you assist me?,assistance_request,positive,request,Requesting help with a task
+What is the weather?,weather_request,curious,question,Asking about current weather
+How do I get there?,direction_request,curious,question,Requesting navigation help
+What should I do?,advice_request,neutral,question,Seeking advice
+Can you explain this?,explanation_request,curious,question,Requesting clarification
+Goodbye,farewell,positive,closing,A polite farewell
