@@ -67,7 +67,12 @@ class CSVConversion:
         self.protocol: ProtocolV2 = ProtocolV2(name=protocol_name, inputs=1, encrypt=False)
         self.standard_input: StateMachineInput = StateMachineInput(
             tokensets=[self.input_tokenset])
-        self.unique_states = self._get_unique_states()
+        if self.csv_type == CSVType.MULTI_CLASSIFIER:
+            self.multi_classifier_state_map: dict[str, list[str]] = self._get_multi_classifier_state_map()
+        elif self.csv_type == CSVType.SINGLE_OUTPUT:
+            self.unique_states: set[str] = self._get_single_output_states()
+        else:
+            raise ConversionError(f"Unsupported CSV type: {self.csv_type}")
 
     def to_mtp(self) -> ProtocolV2:
         """Converts the CSV data to MTP format."""
@@ -100,24 +105,18 @@ class CSVConversion:
     def _get_csv_type(cls, dataframe: pd.DataFrame) -> CSVType:
         return CSVType.SINGLE_OUTPUT if cls._is_single_output_shape(dataframe) else CSVType.MULTI_CLASSIFIER
 
-    def _get_unique_states(self) -> set[str]:
-        """
-        Retrieves unique outputs from the CSV data.
+    def _get_multi_classifier_state_map(self) -> dict[str, list[str]]:
+        states: dict[str, list[str]] = {column: [] for column in self.output_columns}
+        for line in self.ordered_lines:
+            for column, value in line.outputs.items():
+                if value not in states[column]:
+                    states[column].append(value)
+        return states
 
-        :return: A set of unique outputs.
-        """
-        if self.csv_type == CSVType.MULTI_CLASSIFIER:
-            states: dict[str, list[str]] = {column: [] for column in self.output_columns}
-            for line in self.ordered_lines:
-                assert isinstance(line, MultiCSVLine)
-                for column, value in line.outputs.items():
-                    if value not in states[column]:
-                        states[column].append(value)
-            return states
 
+    def _get_single_output_states(self) -> set[str]:
         unique_outputs: set[str] = set()
         for line in self.ordered_lines:
-            assert isinstance(line, CSVLine)
             if line.output_str != "" and not pd.isna(line.output_str):
                 unique_outputs.add(line.output_str)
         if "GUARDRAIL" in unique_outputs:
@@ -231,7 +230,7 @@ class CSVConversion:
         """
         Processes a single instruction and adds it to the protocol.
         """
-        instruction_outputs: set[str] = self._get_unique_states()
+        instruction_outputs: set[str] = self.unique_states
         guardrail = Guardrail(
             good_prompt="Prompt related to the provided context of the model",
             bad_prompt="Prompt that is irrelevant and off topic",
@@ -267,7 +266,7 @@ class CSVConversion:
 
     def _process_multi_instruction(self) -> None:
         """Create a MultiClassifierInstruction from the output columns."""
-        instruction = MultiClassifierInstruction(input=self.standard_input, state_map=self.unique_states)
+        instruction = MultiClassifierInstruction(input=self.standard_input, state_map=self.multi_classifier_state_map)
 
         for line in self.ordered_lines:
             assert isinstance(line, MultiCSVLine)

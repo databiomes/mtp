@@ -22,6 +22,7 @@ def test_extra_output_columns_select_multi_classifier():
     assert conversion.csv_type == CSVType.MULTI_CLASSIFIER
     assert conversion.output_columns == ['OutputOne', 'OutputTwo', 'OutputThree']
     assert all(isinstance(line, MultiCSVLine) for line in conversion.ordered_lines)
+    assert conversion.multi_classifier_state_map == {'OutputOne': ['greeting', 'advice', 'farewell'], 'OutputTwo': ['positive', 'neutral'], 'OutputThree': ['opening', 'question', 'closing']}
 
 def test_multi_classifier_protocol_contains_state_map_and_json_samples():
     instruction = next(iter(CSVConversion(multi_dataframe()).to_mtp().instructions))
@@ -33,6 +34,15 @@ def test_multi_classifier_output_inheritance_is_per_column():
     dataframe = pd.DataFrame({'Input': ['one', 'two', 'three'], 'OutputOne': ['a', '', 'c'], 'OutputTwo': ['x', 'y', ''], 'Reference': ['r1', 'r2', 'r3']})
     conversion = CSVConversion(dataframe)
     assert [line.outputs for line in conversion.ordered_lines] == [{'OutputOne': 'a', 'OutputTwo': 'x'}, {'OutputOne': 'a', 'OutputTwo': 'y'}, {'OutputOne': 'c', 'OutputTwo': 'y'}]
+
+def test_multi_output_empty_output_fixture_file_inherits_previous(multi_csv_with_empty_output_file):
+    conversion = CSVConversion(multi_csv_with_empty_output_file)
+    assert [line.outputs for line in conversion.ordered_lines] == [
+        {'OutputOne': 'one', 'OutputTwo': 'positive'},
+        {'OutputOne': 'one', 'OutputTwo': 'neutral'},
+        {'OutputOne': 'three', 'OutputTwo': 'negative'},
+    ]
+
 
 def test_missing_input_or_reference_is_rejected():
     with pytest.raises(ConversionError, match='Reference'):

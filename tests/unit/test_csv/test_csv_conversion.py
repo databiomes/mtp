@@ -129,6 +129,10 @@ class TestCSVConversion:
         protocol = conversion.to_mtp()
         assert isinstance(protocol, ProtocolV2)
 
+    def test_empty_output_fixture_file_inherits_previous(self, csv_with_empty_output_file):
+        conversion = CSVConversion(csv_with_empty_output_file)
+        assert [line.output_str for line in conversion.ordered_lines] == ['state_one', 'state_one', 'state_three']
+
     def test_format_line_first_row_empty_output_raises_error(self, csv_empty_output_first_row):
         """Test that empty output in first row raises ConversionError."""
         with pytest.raises(ConversionError, match="The first line of the CSV cannot have an empty output"):
