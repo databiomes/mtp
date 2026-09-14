@@ -42,3 +42,8 @@ class ModelType(str, Enum):
     GENERATIVE = "generative"
     STATE_MACHINE = "state_machine"
     MULTI_CLASSIFICATION = "multi_classifier"
+
+class CSVType(str, Enum):
+    """Enumeration for supported CSV input shapes."""
+    SINGLE_OUTPUT = "single_output"
+    MULTI_CLASSIFIER = "multi_classifier"
