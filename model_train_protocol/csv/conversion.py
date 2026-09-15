@@ -1,4 +1,6 @@
+import csv
 from dataclasses import dataclass
+from io import BytesIO, StringIO
 from typing import List
 
 import pandas as pd
@@ -36,6 +38,59 @@ class MultiCSVLine:
     input_str: str
     outputs: dict[str, str]
     context_str: str
+
+
+def read_csv(file_bytes: bytes) -> pd.DataFrame:
+    """
+    Reads the content of a CSV file into a dataframe.
+
+    Column names are read before the file is parsed, because pandas renames a
+    repeated header as it reads, so a file that declares Output twice would
+    otherwise arrive as the columns Output and Output.1 and be converted as
+    though it declared a second output column.
+
+    :param file_bytes: The raw content of the CSV file.
+    :return: The data in the CSV file.
+    :raises ConversionError: If a column name appears more than once.
+    """
+    duplicates = _get_duplicate_columns(file_bytes)
+    if duplicates:
+        repeated = ", ".join(repr(column) for column in duplicates)
+        raise ConversionError(f"CSV cannot contain duplicate column names: {repeated}.")
+    return pd.read_csv(BytesIO(file_bytes))
+
+
+def _get_duplicate_columns(file_bytes: bytes) -> List[str]:
+    """
+    Finds the column names that a CSV header uses more than once.
+
+    :param file_bytes: The raw content of the CSV file.
+    :return: The repeated names, in the order they are first seen.
+    """
+    seen: set[str] = set()
+    duplicates: List[str] = []
+    for column in _get_header_columns(file_bytes):
+        if column in seen and column not in duplicates:
+            duplicates.append(column)
+        seen.add(column)
+    return duplicates
+
+
+def _get_header_columns(file_bytes: bytes) -> List[str]:
+    """
+    Reads the column names from the first non-empty line of a CSV.
+
+    :param file_bytes: The raw content of the CSV file.
+    :return: The column names, or an empty list if the file is not UTF-8 text.
+    """
+    try:
+        content = file_bytes.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return []
+    for row in csv.reader(StringIO(content, newline="")):
+        if any(row):
+            return row
+    return []
 
 
 class CSVConversion:
