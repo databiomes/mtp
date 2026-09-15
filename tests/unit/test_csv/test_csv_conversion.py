@@ -5,7 +5,7 @@ Unit tests for CSV conversion functionality.
 from model_train_protocol import StateMachineInstruction
 from model_train_protocol.common.constants import ModelType
 from model_train_protocol.common.instructions import BaseInstruction
-from model_train_protocol.csv.conversion import CSVConversion, CSVLine
+from model_train_protocol.csv.conversion import CSVConversion, CSVLine, read_csv
 from model_train_protocol.errors.conversion import ConversionError
 from model_train_protocol.errors.protocol import ProtocolError
 from model_train_protocol.v2 import ProtocolV2
@@ -478,3 +478,51 @@ class TestCSVConversionInstructionNaming:
         
         # Verify it's a state machine protocol
         assert protocol.get_model_type() == ModelType.STATE_MACHINE
+
+
+class TestReadCSV:
+    """Test cases for reading CSV file content."""
+
+    def test_read_csv_returns_dataframe(self):
+        """Test that a file with unique column names is read into a dataframe."""
+        content = b"Input,Output,Reference\nHello,greeting,A greeting\n"
+
+        dataframe = read_csv(content)
+
+        assert list(dataframe.columns) == ["Input", "Output", "Reference"]
+        assert len(dataframe) == 1
+
+    def test_read_csv_rejects_duplicate_columns(self):
+        """Test that a repeated column name raises instead of being renamed."""
+        content = b"Input,Output,Output,Reference\nHello,greeting,positive,A greeting\n"
+
+        with pytest.raises(ConversionError) as exc_info:
+            read_csv(content)
+
+        assert "duplicate column names" in str(exc_info.value)
+        assert "Output" in str(exc_info.value)
+
+    def test_read_csv_reports_each_duplicate_once(self):
+        """Test that a column name repeated three times is named once."""
+        content = b"Input,Output,Output,Output,Reference\nHello,a,b,c,A greeting\n"
+
+        with pytest.raises(ConversionError) as exc_info:
+            read_csv(content)
+
+        assert str(exc_info.value).count("Output") == 1
+
+    def test_read_csv_allows_names_that_look_renamed(self):
+        """Test that Output1 and Output1.1 are read as two distinct columns."""
+        content = b"Input,Output1,Output1.1,Reference\nHello,greeting,positive,A greeting\n"
+
+        dataframe = read_csv(content)
+
+        assert list(dataframe.columns) == ["Input", "Output1", "Output1.1", "Reference"]
+
+    def test_read_csv_ignores_a_leading_blank_line(self):
+        """Test that a leading blank line does not hide a repeated column name."""
+        content = b"Input,Output,Output,Reference\nHello,greeting,positive,A greeting\n"
+
+        with pytest.raises(ConversionError):
+            read_csv(content)
+
