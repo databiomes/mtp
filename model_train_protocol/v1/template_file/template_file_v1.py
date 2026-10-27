@@ -88,6 +88,10 @@ class TemplateFileV1:
                 for sample in instruction.samples:
                     output_token_mapping[sample.result.value] = sample.result.key
 
+                if isinstance(instruction, StateMachineInstruction):
+                    for state in instruction.output.states:
+                        output_token_mapping[state.value] = state.key
+
                 # Add UNK token if Guardrails:
                 if instruction.has_guardrails:
                     output_token_mapping[UNK_TOKEN.value] = UNK_TOKEN.key
@@ -136,8 +140,10 @@ class TemplateFileV1:
 
                 input_list.append(RUN_TOKEN.key)
 
+                # State machine outputs are state tokens rather than generated strings
+                is_state_machine: bool = isinstance(instruction, StateMachineInstruction)
                 output_strs: list[str] = [
-                    "<string>\n" + sample.result.key + "\n" + EOS_TOKEN.key
+                    (sample.output if is_state_machine else "<string>") + "\n" + sample.result.key + "\n" + EOS_TOKEN.key
                     for sample in instruction.samples
                 ]
 

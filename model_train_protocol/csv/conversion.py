@@ -14,7 +14,8 @@ from model_train_protocol import (
 from model_train_protocol.common.guardrails import Guardrail
 from model_train_protocol.common.constants import CSVType
 from model_train_protocol.common.instructions.output.MultiClassifierOutput import format_multi_classifier_output
-from model_train_protocol.common.tokens import Token, TokenSet
+from model_train_protocol.common.instructions.output.StateMachineOutput import state_token_from_string
+from model_train_protocol.common.tokens import FinalToken, Token, TokenSet
 from model_train_protocol.errors.conversion import ConversionError
 from model_train_protocol.v2 import ProtocolV2
 
@@ -281,11 +282,21 @@ class CSVConversion:
             return latest
         return latest if cls._is_empty(value) else str(value)
 
+    def _get_state_tokens(self) -> dict[str, FinalToken]:
+        """Maps each CSV output string to its state FinalToken."""
+        state_tokens: dict[str, FinalToken] = {}
+        for state in sorted(self.unique_states):
+            token: FinalToken = state_token_from_string(state)
+            if token in state_tokens.values():
+                raise ConversionError(f"Output '{state}' collides with another output once converted to a token.")
+            state_tokens[state] = token
+        return state_tokens
+
     def _process_instruction(self) -> None:
         """
         Processes a single instruction and adds it to the protocol.
         """
-        instruction_outputs: set[str] = self.unique_states
+        state_tokens: dict[str, FinalToken] = self._get_state_tokens()
         guardrail = Guardrail(
             good_prompt="Prompt related to the provided context of the model",
             bad_prompt="Prompt that is irrelevant and off topic",
@@ -293,7 +304,7 @@ class CSVConversion:
         )
 
         instruction: StateMachineInstruction = StateMachineInstruction(
-            input=self.standard_input, states=list(instruction_outputs)
+            input=self.standard_input, states=list(state_tokens.values())
         )
 
         for line in self.ordered_lines:
@@ -308,7 +319,7 @@ class CSVConversion:
 
             instruction.add_sample(
                 input_snippets=[line.input_str],
-                state=line.output_str
+                state=state_tokens[line.output_str]
             )
 
         if instruction.has_guardrails and 0 < len(guardrail.samples) < 3:

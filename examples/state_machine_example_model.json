@@ -1,5 +1,5 @@
 {
-    "$schema": "https://mtp.schemas.databiomes.com/v2/bloom_2_0_0.json",
+    "$schema": "https://mtp.schemas.databiomes.com/v2/bloom_2_0_1.json",
     "name": "state_machine_example",
     "inputs": 1,
     "model_type": "state_machine",
@@ -95,6 +95,17 @@
             "special": null,
             "type": "Token"
         },
+        "Direction_": {
+            "desc": "Alice asks which way to go.",
+            "key": "Direction_",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": null,
+            "type": "Token"
+        },
         "English_": {
             "desc": null,
             "key": "English_",
@@ -106,8 +117,52 @@
             "special": null,
             "type": "Token"
         },
+        "Farewell_": {
+            "desc": "Alice says goodbye.",
+            "key": "Farewell_",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": null,
+            "type": "Token"
+        },
+        "Identity_": {
+            "desc": "Alice asks who or what the Cat is.",
+            "key": "Identity_",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": null,
+            "type": "Token"
+        },
+        "Location_": {
+            "desc": "Alice asks where she is.",
+            "key": "Location_",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": null,
+            "type": "Token"
+        },
+        "Madness_": {
+            "desc": "Alice asks about madness.",
+            "key": "Madness_",
+            "length": null,
+            "max_value": null,
+            "min_value": null,
+            "num": false,
+            "num_list": 0,
+            "special": null,
+            "type": "Token"
+        },
         "State_": {
-            "desc": "The responses that are acceptable: ['DIRECTION', 'IDENTITY', 'MADNESS', 'LOCATION', 'FAREWELL'].",
+            "desc": "The response is exactly one of these state tokens: ['Direction_', 'Identity_', 'Madness_', 'Location_', 'Farewell_'].",
             "key": "State_",
             "length": null,
             "max_value": null,
@@ -156,7 +211,7 @@
             {
                 "context": [
                     "The Cheshire Cat routes each line Alice speaks to the kind of question it represents.",
-                    "Every response is exactly one of the defined states."
+                    "Every response is exactly one of the defined state tokens."
                 ],
                 "guardrails": [
                     {
@@ -187,7 +242,7 @@
                         "result": "<NON>",
                         "strings": [
                             "Which way ought I to go from here?",
-                            "DIRECTION"
+                            "Direction_"
                         ],
                         "value": null
                     },
@@ -204,7 +259,24 @@
                         "result": "<NON>",
                         "strings": [
                             "Can you tell me which road leads out of this wood?",
-                            "DIRECTION"
+                            "Direction_"
+                        ],
+                        "value": null
+                    },
+                    {
+                        "number_lists": [
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "<NON>",
+                        "strings": [
+                            "Should I follow the path to the left or to the right?",
+                            "Direction_"
                         ],
                         "value": null
                     },
@@ -221,7 +293,7 @@
                         "result": "<NON>",
                         "strings": [
                             "Please, would you tell me what sort of creature you are?",
-                            "IDENTITY"
+                            "Identity_"
                         ],
                         "value": null
                     },
@@ -238,7 +310,24 @@
                         "result": "<NON>",
                         "strings": [
                             "Are you a cat, or something else entirely?",
-                            "IDENTITY"
+                            "Identity_"
+                        ],
+                        "value": null
+                    },
+                    {
+                        "number_lists": [
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "<NON>",
+                        "strings": [
+                            "Who are you, and why do you keep grinning so?",
+                            "Identity_"
                         ],
                         "value": null
                     },
@@ -255,7 +344,7 @@
                         "result": "<NON>",
                         "strings": [
                             "Are you quite certain that everyone here is mad?",
-                            "MADNESS"
+                            "Madness_"
                         ],
                         "value": null
                     },
@@ -272,7 +361,24 @@
                         "result": "<NON>",
                         "strings": [
                             "How do you know that I am mad as well?",
-                            "MADNESS"
+                            "Madness_"
+                        ],
+                        "value": null
+                    },
+                    {
+                        "number_lists": [
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "<NON>",
+                        "strings": [
+                            "Is there anyone in this place who is not mad?",
+                            "Madness_"
                         ],
                         "value": null
                     },
@@ -289,7 +395,7 @@
                         "result": "<NON>",
                         "strings": [
                             "Where in the world have I landed?",
-                            "LOCATION"
+                            "Location_"
                         ],
                         "value": null
                     },
@@ -306,7 +412,24 @@
                         "result": "<NON>",
                         "strings": [
                             "What is this strange place called?",
-                            "LOCATION"
+                            "Location_"
+                        ],
+                        "value": null
+                    },
+                    {
+                        "number_lists": [
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "<NON>",
+                        "strings": [
+                            "Am I still in England, or somewhere else altogether?",
+                            "Location_"
                         ],
                         "value": null
                     },
@@ -323,7 +446,7 @@
                         "result": "<NON>",
                         "strings": [
                             "Goodbye then, I shall find the way myself.",
-                            "FAREWELL"
+                            "Farewell_"
                         ],
                         "value": null
                     },
@@ -340,7 +463,24 @@
                         "result": "<NON>",
                         "strings": [
                             "I must be going now, thank you all the same.",
-                            "FAREWELL"
+                            "Farewell_"
+                        ],
+                        "value": null
+                    },
+                    {
+                        "number_lists": [
+                            [],
+                            []
+                        ],
+                        "numbers": [
+                            [],
+                            []
+                        ],
+                        "prompt": null,
+                        "result": "<NON>",
+                        "strings": [
+                            "Farewell, Cat, I hope we meet again someday.",
+                            "Farewell_"
                         ],
                         "value": null
                     }

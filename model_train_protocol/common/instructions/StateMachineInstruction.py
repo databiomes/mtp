@@ -4,59 +4,77 @@ from model_train_protocol.errors import InstructionError, InstructionTypeError
 from .BaseInstruction import BaseInstruction, Sample
 from .input.StateMachineInput import StateMachineInput
 from .output.StateMachineOutput import StateMachineOutput
-from ..constants import NON_TOKEN, STATE_MACHINE_MINIMUM_INSTRUCTION_SAMPLES
+from ..constants import NON_TOKEN, STATE_MACHINE_MINIMUM_INSTRUCTION_SAMPLES, PER_FINAL_TOKEN_SAMPLE_MINIMUM
 from ..guardrails import Guardrail
-from ..tokens.FinalToken import FinalToken
 from ..tokens.TokenSet import TokenSet, Snippet
 from ... import Token
+
+
+class StateSample(Sample):
+    """A Sample whose output is a state Token. The output string is the token's key."""
+
+    def __init__(self, input: List[str], state: Token, numbers: List[List[int]],
+                 number_lists: List[List[List[int]]]):
+        self.input: List[str] = input
+        self.state: Token = state
+        self.prompt = None
+        self.numbers: List[List[int]] = numbers
+        self.number_lists: List[List[List[int]]] = number_lists
+        self.result = NON_TOKEN
+        self.value = None
+
+    @property
+    def output(self) -> str:
+        """The state token's key, resolved at read time so protocol-assigned keys are used."""
+        return self.state.key if self.state.key is not None else self.state.value
 
 
 class StateMachineInstruction(BaseInstruction):
     """
     Special Instruction for State Machine Protocols.
 
-    StateMachineInstructions do not have final tokens.
+    The model responds with exactly one state Token, followed by the default final token.
     """
     input: StateMachineInput
     output: StateMachineOutput
 
     minimum_samples: int = STATE_MACHINE_MINIMUM_INSTRUCTION_SAMPLES
 
-    def __init__(self, input: StateMachineInput, states: List[str]):
+    def __init__(self, input: StateMachineInput, states: List[Token]):
         """
         Initializes an Instruction instance.
 
-        :param input: List of tuples containing Token instances that define the input structure. This precedes the model's response.
-        :param states: List of possible states that the model can respond with. These will be added to the response TokenSet.
+        :param input: StateMachineInput defining the input TokenSets. This precedes the model's response.
+        :param states: Tokens the model can respond with.
         """
-        state_token: Token = Token("State", desc=f"The responses that are acceptable: {states}.")
-        state_tokenset = TokenSet(tokens=[state_token])
+        state_token: Token = Token("State",
+                                   desc=f"The response is exactly one of these state tokens: {[s.value for s in states]}.")
         instruction_output: StateMachineOutput = StateMachineOutput(
-            tokenset=state_tokenset,
+            tokenset=TokenSet(tokens=[state_token]),
+            states=states,
         )
         super().__init__(input=input, output=instruction_output, context=[], name="StateMachineInstruction")
         if not isinstance(self.output, StateMachineOutput):
             raise InstructionTypeError(f"Output must be an instance of StateMachineOutput. Got: {type(self.output)}")
         self._validate_input_snippets()
 
-    def _validate_snippets_match(self, inputs: List[Snippet], response_snippet: Snippet):
-        """Validates that all snippets in the samples match their expected token sets."""
-        all_snippets: List[Snippet] = inputs + [response_snippet]
-        all_token_sets: List[TokenSet] = self.get_token_sets()
+    def _validate_snippets_match(self, inputs: List[Snippet]):
+        """Validates that all input snippets match their expected token sets."""
+        for snippet, token_set in zip(inputs, self.input.tokensets):
+            self._validate_snippet_matches_set(snippet=snippet, expected_token_set=token_set)
 
-        for i in range(len(all_snippets)):
-            self._validate_snippet_matches_set(snippet=all_snippets[i], expected_token_set=all_token_sets[i])
-
-        # Validate output snippet set matches output token set
-        self._validate_snippet_matches_set(snippet=response_snippet, expected_token_set=self.output.tokenset)
-
-    def get_token_sets(self) -> List[TokenSet]:
-        """Returns all tokens in the instruction as a list of tuples."""
-        all_tokens_sets: List = []
-        for token_set in self.input.tokensets:
-            all_tokens_sets.append(token_set)
-        all_tokens_sets.append(self.output.tokenset)
-        return all_tokens_sets
+    def _validate_minimum_samples(self):
+        """Validates the instruction-wide minimum and that every state token has enough samples."""
+        super()._validate_minimum_samples()
+        state_counts: dict[Token, int] = {state: 0 for state in self.output.states}
+        for sample in self.samples:
+            state_counts[sample.state] += 1
+        for state, count in state_counts.items():
+            if count < PER_FINAL_TOKEN_SAMPLE_MINIMUM:
+                raise InstructionError(
+                    f"Instruction '{self.name}' has only {count} samples for state token '{state.value}'. "
+                    f"Each state token must have at least {PER_FINAL_TOKEN_SAMPLE_MINIMUM} samples."
+                )
 
     @property
     def last_tokenset(self) -> TokenSet:
@@ -72,32 +90,38 @@ class StateMachineInstruction(BaseInstruction):
         """Gets the guardrails attached to the instruction"""
         return list(self.input.guardrails.values())
 
+    def get_tokens(self) -> List[Token]:
+        """Returns all tokens in the instruction, including the state tokens."""
+        return super().get_tokens() + list(self.output.states)
+
     def get_states(self) -> list[str]:
-        """Returns the list of states defined in the TokenSet."""
-        # Deduplicated in sample order rather than through a set, so the states (and every file generated from them)
-        # come out the same on every run.
+        """Returns the state token keys used by the samples, plus each guardrail's text output."""
         states: list[str] = list(dict.fromkeys(sample.output for sample in self.samples))
-        if self.has_guardrails:
-            states.append("GUARDRAIL")
+        for guardrail in self.get_guardrails():
+            if guardrail.bad_output not in states:
+                states.append(guardrail.bad_output)
         return states
 
     # noinspection PyMethodOverriding
-    def add_sample(self, input_snippets: List[Union[str | Snippet]], state: str):
-        f"""
+    def add_sample(self, input_snippets: List[Union[str | Snippet]], state: Token):
+        """
         Add a sample to the Instruction.
 
         :param input_snippets: List of context snippets or strings that will be added to the Instruction.
-        :param state: The model's response state.
+        :param state: The state token the model responds with.
         """
         input_snippets: List[Snippet] = self._enforce_input_snippets(inputs=input_snippets)
-        output_snippet: Snippet = self._enforce_response_snippet(state)
-        final: FinalToken = NON_TOKEN
-        self.output.validate_sample(snippet=output_snippet)
+        self.output.validate_sample(state=state)
         self._assert_input_snippet_count(inputs=input_snippets)
-        self._validate_snippets_match(inputs=input_snippets, response_snippet=output_snippet)
-        self._validate_snippet_length(inputs=input_snippets, response_snippet=output_snippet)
-        sample: Sample = self._create_sample(inputs=input_snippets, response_snippet=output_snippet, final=final)
-        self.samples.append(sample)
+        self._validate_snippets_match(inputs=input_snippets)
+        self._validate_snippet_length(inputs=input_snippets, response_snippet=self.output.tokenset.create_snippet(
+            string=state.value))
+        self.samples.append(StateSample(
+            input=[snippet.string for snippet in input_snippets],
+            state=state,
+            numbers=[snippet.numbers for snippet in input_snippets] + [[]],
+            number_lists=[snippet.number_lists for snippet in input_snippets] + [[]],
+        ))
 
     def add_guardrail(self, guardrail: Guardrail, tokenset_index: int):
         """

@@ -38,19 +38,19 @@ def valid_csv_data():
             'Goodbye'
         ],
         'Output': [
-            'greeting', 
-            'name_request', 
+            'greeting',
+            'name_request',
             'joke_request',
-            'help_offer',
-            'time_request',
-            'location_request', 
-            'assistance_request',
-            'weather_request',
-            'direction_request',
-            'advice_request',
-            'explanation_request',
+            'farewell',
+            'greeting',
+            'name_request',
+            'joke_request',
+            'farewell',
+            'greeting',
+            'name_request',
+            'joke_request',
             'farewell'
-        ], 
+        ],  
         'Reference': [
             'A friendly greeting to start conversation', 
             'Asking for the user\'s name to personalize interaction', 
@@ -89,20 +89,20 @@ def valid_csv_with_guardrails():
             'Goodbye'
         ],
         'Output': [
-            'greeting', 
-            'name_request', 
+            'greeting',
+            'name_request',
             'joke_request',
-            'help_offer',
-            'time_request',
-            'location_request',
-            'assistance_request', 
-            'weather_request',
-            'direction_request',
-            'advice_request',
+            'greeting',
+            'name_request',
+            'joke_request',
+            'greeting',
+            'name_request',
+            'joke_request',
+            'greeting',
             'GUARDRAIL',
-            'GUARDRAIL', 
             'GUARDRAIL',
-            'farewell'
+            'GUARDRAIL',
+            'name_request'
         ],
         'Reference': [
             'A friendly greeting to start conversation', 
@@ -127,9 +127,10 @@ def valid_csv_with_guardrails():
 def csv_with_empty_outputs():
     """CSV data with some empty output values (should inherit from previous)."""
     return pd.DataFrame({
-        'Input': ['First input', 'Second input', 'Third input', 'Fourth input'],
-        'Output': ['first_state', '', '', 'fourth_state'],
-        'Reference': ['First reference', 'Second reference', 'Third reference', 'Fourth reference']
+        'Input': ['First input', 'Second input', 'Third input', 'Fourth input', 'Fifth input', 'Sixth input'],
+        'Output': ['first_state', '', '', 'fourth_state', '', ''],
+        'Reference': ['First reference', 'Second reference', 'Third reference', 'Fourth reference',
+                      'Fifth reference', 'Sixth reference']
     })
 
 
@@ -137,9 +138,9 @@ def csv_with_empty_outputs():
 def csv_with_nan_outputs():
     """CSV data with NaN output values."""
     return pd.DataFrame({
-        'Input': ['Input 1', 'Input 2', 'Input 3'],
-        'Output': ['state1', pd.NA, 'state2'],
-        'Reference': ['Ref 1', 'Ref 2', 'Ref 3']
+        'Input': ['Input 1', 'Input 2', 'Input 3', 'Input 4', 'Input 5', 'Input 6'],
+        'Output': ['state1', pd.NA, pd.NA, 'state2', pd.NA, pd.NA],
+        'Reference': ['Ref 1', 'Ref 2', 'Ref 3', 'Ref 4', 'Ref 5', 'Ref 6']
     })
 
 
@@ -177,23 +178,23 @@ def csv_insufficient_guardrails():
     """CSV with insufficient guardrail samples (less than 3)."""
     return pd.DataFrame({
         'Input': [
-            'Hello',
-            'Goodbye', 
-            'How are you?',
+            'Hello', 'Hi there', 'Good morning',
+            'Goodbye', 'See you later', 'Farewell for now',
+            'How are you?', 'What is this?', 'Where am I?',
             'Bad request 1',
             'Bad request 2',  # Only 2 guardrail samples
         ],
         'Output': [
-            'greeting',
-            'farewell',
-            'question',
+            'greeting', 'greeting', 'greeting',
+            'farewell', 'farewell', 'farewell',
+            'question', 'question', 'question',
             'GUARDRAIL',
-            'GUARDRAIL', 
+            'GUARDRAIL',
         ],
         'Reference': [
-            'Greeting',
-            'Farewell',
-            'Question',
+            'Greeting', 'Greeting 2', 'Greeting 3',
+            'Farewell', 'Farewell 2', 'Farewell 3',
+            'Question', 'Question 2', 'Question 3',
             'Bad content',
             'Bad content 2',
         ]
@@ -205,25 +206,25 @@ def csv_with_proper_guardrails_but_wrong_context():
     """CSV with sufficient guardrails but tests the guardrail validation logic."""
     return pd.DataFrame({
         'Input': [
-            'Hello',
-            'Goodbye', 
-            'How are you?',
+            'Hello', 'Hi there', 'Good morning',
+            'Goodbye', 'See you later', 'Farewell for now',
+            'How are you?', 'What is this?', 'Where am I?',
             'Bad request 1',
-            'Bad request 2', 
-            'Bad request 3',  # 3 guardrail samples to test actual guardrail logic 
+            'Bad request 2',
+            'Bad request 3',  # 3 guardrail samples to test actual guardrail logic
         ],
         'Output': [
-            'greeting',
-            'farewell',
-            'question',
+            'greeting', 'greeting', 'greeting',
+            'farewell', 'farewell', 'farewell',
+            'question', 'question', 'question',
             'GUARDRAIL',
             'GUARDRAIL',
-            'GUARDRAIL', 
+            'GUARDRAIL',
         ],
         'Reference': [
-            'Greeting',
-            'Farewell',
-            'Question',
+            'Greeting', 'Greeting 2', 'Greeting 3',
+            'Farewell', 'Farewell 2', 'Farewell 3',
+            'Question', 'Question 2', 'Question 3',
             'Bad content',
             'Bad content 2',
             'Bad content 3',
@@ -235,9 +236,9 @@ def csv_with_proper_guardrails_but_wrong_context():
 def csv_with_context_variations():
     """CSV with empty and NaN context values."""
     return pd.DataFrame({
-        'Input': ['Input 1', 'Input 2', 'Input 3', 'Input 4'],
-        'Output': ['state1', 'state2', 'state3', 'state4'],
-        'Reference': ['Context 1', '', pd.NA, 'Context 4']
+        'Input': ['Input 1', 'Input 2', 'Input 3', 'Input 4', 'Input 5', 'Input 6'],
+        'Output': ['state1', 'state1', 'state1', 'state2', 'state2', 'state2'],
+        'Reference': ['Context 1', '', pd.NA, 'Context 4', '', pd.NA]
     })
 
 
@@ -253,9 +254,9 @@ def csv_insufficient_context_lines():
         ],
         'Output': [
             'greeting',
-            'name_request',
-            'joke_request', 
-            'farewell'
+            'greeting',
+            'greeting',
+            'greeting'
         ],
         'Reference': [
             'A friendly greeting',
@@ -292,9 +293,9 @@ def csv_insufficient_context_lines():
         ],
         'Output': [
             'greeting',
-            'name_request',
-            'joke_request', 
-            'farewell'
+            'greeting',
+            'greeting',
+            'greeting'
         ],
         'Reference': [
             'A friendly greeting',

@@ -13,6 +13,7 @@ from model_train_protocol.common.constants import BOS_TOKEN, EOS_TOKEN, RUN_TOKE
     RECOMMENDED_MAXIMUM_CHARACTERS_PER_MODEL_CONTEXT_LINE
 from model_train_protocol.common.instructions.BaseInstruction import BaseInstruction, Sample
 from model_train_protocol.common.instructions.StateMachineInstruction import StateMachineInstruction
+from model_train_protocol.common.instructions.output.StateMachineOutput import state_token_from_string
 from model_train_protocol.common.instructions.input.StateMachineInput import StateMachineInput
 from model_train_protocol.common.tokens import TokenSet
 from model_train_protocol.common.tokens.SpecialToken import SpecialToken
@@ -470,10 +471,13 @@ class ProtocolV1(BaseProtocol):
                 tokensets=tokensets[:-1],
             )
 
-            states: list[str] = list(dict.fromkeys([sample.output for sample in samples]))
+            # Legacy blooms store each state as the sample's output string.
+            states: dict[str, Token] = {
+                state: state_token_from_string(state) for state in dict.fromkeys(sample.output for sample in samples)
+            }
             protocol_instruction: StateMachineInstruction = StateMachineInstruction(
                 input=instr_input,
-                states=states,
+                states=list(states.values()),
             )
             protocol_instruction.output.tokenset = tokensets[-1]
             protocol_instruction.context = context
@@ -488,7 +492,7 @@ class ProtocolV1(BaseProtocol):
 
                 protocol_instruction.add_sample(
                     input_snippets=inputs_snippets,
-                    state=sample.output,
+                    state=states[sample.output],
                 )
 
             # Add guardrails

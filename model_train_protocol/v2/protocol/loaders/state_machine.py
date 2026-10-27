@@ -38,10 +38,14 @@ def load_state_machine_protocol(protocol_file: dict, protocol: "ProtocolV2",
             tokensets=tokensets[:-1],
         )
 
-        states: list[str] = list(dict.fromkeys([sample.output for sample in samples]))
+        # Each sample's output string is the key of its state token.
+        tokens_by_key: Dict[str, Token] = {token.key: token for token in tokens.values()}
+        states: Dict[str, Token] = {
+            output: tokens_by_key[output] for output in dict.fromkeys(sample.output for sample in samples)
+        }
         protocol_instruction: StateMachineInstruction = StateMachineInstruction(
             input=instr_input,
-            states=states,
+            states=list(states.values()),
         )
         protocol_instruction.output.tokenset = tokensets[-1]
         protocol_instruction.context = context
@@ -56,7 +60,7 @@ def load_state_machine_protocol(protocol_file: dict, protocol: "ProtocolV2",
 
             protocol_instruction.add_sample(
                 input_snippets=inputs_snippets,
-                state=sample.output,
+                state=states[sample.output],
             )
 
         # Add guardrails

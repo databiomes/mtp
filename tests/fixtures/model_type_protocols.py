@@ -21,9 +21,10 @@ MULTI_CLASSIFIER_SAMPLES = [
     ("Oh dear, I do hope this fall will ever come to an end.", {"emotion": "afraid", "intent": "statement"}),
     ("How funny it seems to talk to a cat that keeps vanishing!", {"emotion": "curious", "intent": "statement"}),
     ("Are you quite certain that everyone here is mad?", {"emotion": "confused", "intent": "question"}),
+    ("Would you tell me what sort of creature you are?", {"emotion": "curious", "intent": "question"}),
 ]
 
-STATE_MACHINE_STATES = ["QUESTION", "STATEMENT"]
+STATE_MACHINE_STATES = [mtp.Token("QUESTION"), mtp.Token("STATEMENT")]
 
 
 def input_tokenset(action: str = "Talk") -> mtp.TokenSet:
@@ -68,7 +69,7 @@ def build_state_machine_instruction(action: str = "Talk") -> mtp.StateMachineIns
         states=STATE_MACHINE_STATES,
     )
     for line, classification in MULTI_CLASSIFIER_SAMPLES:
-        instruction.add_sample(input_snippets=[line], state=classification["intent"].upper())
+        instruction.add_sample(input_snippets=[line], state=mtp.Token(classification["intent"].upper()))
     return instruction
 
 

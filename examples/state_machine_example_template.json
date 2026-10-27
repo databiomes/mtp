@@ -10,6 +10,11 @@
         },
         "output": {
             "<NON>": "<NON>",
+            "Direction_": "Direction_",
+            "Farewell_": "Farewell_",
+            "Identity_": "Identity_",
+            "Location_": "Location_",
+            "Madness_": "Madness_",
             "<NON>_<UNK>_": "<NON>_<UNK>_"
         }
     },
@@ -23,22 +28,26 @@
                 "<RUN>"
             ],
             "output": [
-                "<string>\n<NON>\n<EOS>",
+                "Direction_\n<NON>\n<EOS>",
+                "Identity_\n<NON>\n<EOS>",
+                "Madness_\n<NON>\n<EOS>",
+                "Location_\n<NON>\n<EOS>",
+                "Farewell_\n<NON>\n<EOS>",
                 "<string>\n<NON>_<UNK>_\n<EOS>"
             ]
         }
     },
     "states": [
-        "DIRECTION",
-        "IDENTITY",
-        "MADNESS",
-        "LOCATION",
-        "FAREWELL",
+        "Direction_",
+        "Identity_",
+        "Madness_",
+        "Location_",
+        "Farewell_",
         "GUARDRAIL"
     ],
     "example_usage": {
         "instruction_input": "<BOS>\nTree_English_Alice_Talk_\nWhich way ought I to go from here?\nState_\n<RUN>\n",
-        "valid_model_output": "DIRECTION\n<NON>\n<EOS>",
+        "valid_model_output": "Direction_\n<NON>\n<EOS>",
         "guardrail_model_output": "GUARDRAIL\n<NON>_<UNK>_\n<EOS>"
     }
 }

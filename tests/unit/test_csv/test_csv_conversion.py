@@ -71,7 +71,7 @@ class TestCSVConversion:
         """Test that dataframe processing removes rows with NaN inputs."""
         data = pd.DataFrame({
             'Input': ['Valid input', '', pd.NA, 'Another valid'],
-            'Output': ['state1', 'state2', 'state3', 'state4'],
+            'Output': ['state1', 'state1', 'state1', 'state1'],
             'Reference': ['ref1', 'ref2', 'ref3', 'ref4']
         })
         
@@ -123,7 +123,8 @@ class TestCSVConversion:
         
         assert lines[0].output_str == "state1"
         assert lines[1].output_str == "state1"  # Inherited from previous
-        assert lines[2].output_str == "state2"
+        assert lines[2].output_str == "state1"  # Inherited from previous
+        assert lines[3].output_str == "state2"
         
         # Test full conversion works with NaN output inheritance
         protocol = conversion.to_mtp()
@@ -143,9 +144,7 @@ class TestCSVConversion:
         conversion = CSVConversion(valid_csv_with_guardrails)
         unique_states = conversion.unique_states
         
-        expected_states = {"greeting", "name_request", "joke_request", "help_offer", "time_request", 
-                          "location_request", "assistance_request", "weather_request", 
-                          "direction_request", "advice_request", "farewell"}
+        expected_states = {"greeting", "name_request", "joke_request"}
         assert unique_states == expected_states
         assert "GUARDRAIL" not in unique_states
         
@@ -158,7 +157,7 @@ class TestCSVConversion:
         conversion = CSVConversion(csv_with_context_variations)
         unique_states = conversion.unique_states
         
-        expected_states = {"state1", "state2", "state3", "state4"}
+        expected_states = {"state1", "state2"}
         assert unique_states == expected_states
         
         # Test full conversion works with context variations
@@ -177,7 +176,7 @@ class TestCSVConversion:
         # Check the instruction
         instruction: BaseInstruction = list(protocol.instructions)[0]
         assert isinstance(instruction, StateMachineInstruction)
-        assert len(instruction.get_states()) == 12  # 12 regular states
+        assert len(instruction.get_states()) == 4  # 4 regular states
         assert len(instruction.samples) == 12
 
     def test_to_mtp_with_guardrails(self, valid_csv_with_guardrails):
@@ -187,9 +186,9 @@ class TestCSVConversion:
         
         instruction = list(protocol.instructions)[0]
         
-        # Should have 11 regular states + GUARDRAIL = 12 total states
+        # Should have 3 regular states + GUARDRAIL = 4 total states
         assert isinstance(instruction, StateMachineInstruction)
-        assert len(instruction.get_states()) == 12
+        assert len(instruction.get_states()) == 4
 
         # Should have guardrail with 3 samples
         assert instruction.has_guardrails
@@ -245,11 +244,12 @@ class TestCSVConversion:
         # Check that all samples are present
         sample_inputs = [sample.input[0] for sample in samples]
         sample_states = [sample.output for sample in samples]
-        
+
         assert "Hello, how are you?" in sample_inputs
-        assert "greeting" in sample_states
+        assert "greeting_" in sample_states
         assert "What is your name?" in sample_inputs
-        assert "name_request" in sample_states
+        assert "name_request_" in sample_states
+        assert all(sample.result.value == "<NON>" for sample in samples)
 
     def test_large_dataset_performance(self, large_valid_csv):
         """Test conversion with large dataset."""
@@ -320,9 +320,9 @@ class TestCSVConversionEdgeCases:
     def test_duplicate_states(self):
         """Test handling of duplicate states."""
         duplicate_states_df = pd.DataFrame({
-            'Input': ['Input 1', 'Input 2', 'Input 3'],
-            'Output': ['state1', 'state1', 'state2'],
-            'Reference': ['Ref 1', 'Ref 2', 'Ref 3']
+            'Input': ['Input 1', 'Input 2', 'Input 3', 'Input 4', 'Input 5', 'Input 6'],
+            'Output': ['state1', 'state1', 'state1', 'state2', 'state2', 'state2'],
+            'Reference': ['Ref 1', 'Ref 2', 'Ref 3', 'Ref 4', 'Ref 5', 'Ref 6']
         })
         
         conversion = CSVConversion(duplicate_states_df)
@@ -331,8 +331,8 @@ class TestCSVConversionEdgeCases:
         instruction = list(protocol.instructions)[0]
         assert isinstance(instruction, StateMachineInstruction)
         assert len(instruction.get_states()) == 2  # Only unique states
-        assert set(instruction.get_states()) == {'state1', 'state2'}
-        assert len(instruction.samples) == 3  # All samples preserved
+        assert set(instruction.get_states()) == {'state1_', 'state2_'}
+        assert len(instruction.samples) == 6  # All samples preserved
 
     def test_only_guardrails(self):
         """Test dataset with only guardrail entries raises ProtocolError."""
@@ -352,7 +352,7 @@ class TestCSVConversionEdgeCases:
         """Test context handling with special characters and formatting."""
         special_chars_df = pd.DataFrame({
             'Input': ['Input with "quotes"', 'Input with\nnewlines', 'Input with\ttabs'],
-            'Output': ['state1', 'state2', 'state3'],
+            'Output': ['state1', 'state1', 'state1'],
             'Reference': ['Context with "quotes"', 'Context with\nnewlines', 'Context with\ttabs']
         })
         

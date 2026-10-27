@@ -24,7 +24,7 @@ def _build_state_machine_instruction(sample_count: int, token_prefix: str) -> mt
         tokensets=[state_tokenset, event_tokenset],
     )
 
-    states: List[str] = [f"Action {i}" for i in range(sample_count)]
+    states: List[mtp.Token] = [mtp.Token(f"Action{i}") for i in range(3)]
 
     instruction: mtp.StateMachineInstruction = mtp.StateMachineInstruction(
         input=instruction_input,
@@ -34,7 +34,7 @@ def _build_state_machine_instruction(sample_count: int, token_prefix: str) -> mt
     for i in range(sample_count):
         instruction.add_sample(
             input_snippets=[f"State {i}", f"Event {i}"],
-            state=f"Action {i}",
+            state=states[i % 3],
         )
 
     return instruction

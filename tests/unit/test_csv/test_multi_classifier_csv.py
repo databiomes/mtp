@@ -11,7 +11,7 @@ def multi_dataframe():
     return pd.DataFrame({'Input': ['Hello', 'What should I wear?', 'Goodbye'], 'OutputOne': ['greeting', 'advice', 'farewell'], 'OutputTwo': ['positive', 'neutral', 'positive'], 'OutputThree': ['opening', 'question', 'closing'], 'Reference': ['A greeting', 'A request for advice', 'A farewell']})
 
 def test_exact_legacy_shape_stays_single_output():
-    dataframe = pd.DataFrame({'Input': ['one', 'two', 'three'], 'Output': ['a', 'b', 'c'], 'Reference': ['r1', 'r2', 'r3']})
+    dataframe = pd.DataFrame({'Input': ['one', 'two', 'three'], 'Output': ['a', 'a', 'a'], 'Reference': ['r1', 'r2', 'r3']})
     conversion = CSVConversion(dataframe)
     protocol = conversion.to_mtp()
     assert conversion.csv_type == CSVType.SINGLE_OUTPUT

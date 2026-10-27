@@ -99,7 +99,7 @@ class TestFileOperations:
 
         assert data["state_machine"] is True
         assert data["states"]
-        assert "Action 0" in data["states"]
+        assert "Action0_" in data["states"]
 
         template_file.unlink()
 

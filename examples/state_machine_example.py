@@ -56,15 +56,21 @@ tree_english_alice_talk: mtp.TokenSet = mtp.TokenSet(tokens=(token_tree, token_e
 
 # -------------------- State Machine Instruction --------------------
 
-# The states are the complete list of outputs the model can respond with.
-states = ["DIRECTION", "IDENTITY", "MADNESS", "LOCATION", "FAREWELL"]
+# The states are the complete list of tokens the model can respond with. The model responds with a single state token
+# in place of a generated string.
+token_direction: mtp.Token = mtp.Token("Direction", desc="Alice asks which way to go.")
+token_identity: mtp.Token = mtp.Token("Identity", desc="Alice asks who or what the Cat is.")
+token_madness: mtp.Token = mtp.Token("Madness", desc="Alice asks about madness.")
+token_location: mtp.Token = mtp.Token("Location", desc="Alice asks where she is.")
+token_farewell: mtp.Token = mtp.Token("Farewell", desc="Alice says goodbye.")
+states = [token_direction, token_identity, token_madness, token_location, token_farewell]
 
 # Construct the Input format. A state machine accepts one or more input TokenSets; here we use a single line.
 alice_line_input: mtp.StateMachineInput = mtp.StateMachineInput(
     tokensets=[tree_english_alice_talk],
 )
 
-# Create the Instruction. The output format is derived automatically from the states,
+# Create the Instruction. The output is derived automatically from the state tokens,
 # so we only need to provide the input and the states.
 alice_line_router: mtp.StateMachineInstruction = mtp.StateMachineInstruction(
     input=alice_line_input,
@@ -75,58 +81,78 @@ alice_line_router: mtp.StateMachineInstruction = mtp.StateMachineInstruction(
 alice_line_router.add_context(
     "The Cheshire Cat routes each line Alice speaks to the kind of question it represents.")
 alice_line_router.add_context(
-    "Every response is exactly one of the defined states.")
+    "Every response is exactly one of the defined state tokens.")
 
-# Add at least 10 samples. Each sample maps an input line to one of the states.
+# Add at least 10 samples, with at least 3 for each state token. Each sample maps an input line to one state token.
 
 # DIRECTION
 alice_line_router.add_sample(
     input_snippets=["Which way ought I to go from here?"],
-    state="DIRECTION",
+    state=token_direction,
 )
 alice_line_router.add_sample(
     input_snippets=["Can you tell me which road leads out of this wood?"],
-    state="DIRECTION",
+    state=token_direction,
+)
+alice_line_router.add_sample(
+    input_snippets=["Should I follow the path to the left or to the right?"],
+    state=token_direction,
 )
 
 # IDENTITY
 alice_line_router.add_sample(
     input_snippets=["Please, would you tell me what sort of creature you are?"],
-    state="IDENTITY",
+    state=token_identity,
 )
 alice_line_router.add_sample(
     input_snippets=["Are you a cat, or something else entirely?"],
-    state="IDENTITY",
+    state=token_identity,
+)
+alice_line_router.add_sample(
+    input_snippets=["Who are you, and why do you keep grinning so?"],
+    state=token_identity,
 )
 
 # MADNESS
 alice_line_router.add_sample(
     input_snippets=["Are you quite certain that everyone here is mad?"],
-    state="MADNESS",
+    state=token_madness,
 )
 alice_line_router.add_sample(
     input_snippets=["How do you know that I am mad as well?"],
-    state="MADNESS",
+    state=token_madness,
+)
+alice_line_router.add_sample(
+    input_snippets=["Is there anyone in this place who is not mad?"],
+    state=token_madness,
 )
 
 # LOCATION
 alice_line_router.add_sample(
     input_snippets=["Where in the world have I landed?"],
-    state="LOCATION",
+    state=token_location,
 )
 alice_line_router.add_sample(
     input_snippets=["What is this strange place called?"],
-    state="LOCATION",
+    state=token_location,
+)
+alice_line_router.add_sample(
+    input_snippets=["Am I still in England, or somewhere else altogether?"],
+    state=token_location,
 )
 
 # FAREWELL
 alice_line_router.add_sample(
     input_snippets=["Goodbye then, I shall find the way myself."],
-    state="FAREWELL",
+    state=token_farewell,
 )
 alice_line_router.add_sample(
     input_snippets=["I must be going now, thank you all the same."],
-    state="FAREWELL",
+    state=token_farewell,
+)
+alice_line_router.add_sample(
+    input_snippets=["Farewell, Cat, I hope we meet again someday."],
+    state=token_farewell,
 )
 
 # -------------------- Guardrail --------------------

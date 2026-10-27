@@ -126,7 +126,7 @@ class TestStateMachineAndGenerativeStates:
         states = build_state_machine_protocol().get_template_file().to_json()["states"]
 
         assert isinstance(states, list)
-        assert sorted(states) == sorted(STATE_MACHINE_STATES)
+        assert sorted(states) == sorted(state.value for state in STATE_MACHINE_STATES)
 
     def test_generative_states_are_empty(self):
         assert build_generative_protocol().get_template_file().to_json()["states"] == []
